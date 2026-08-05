@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
 <title>PTE Prep Hub — Ask the Handbook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -17,6 +17,9 @@
     --accent-red:#B0432A;
     --muted:#726C5E;
     --shadow: 0 1px 2px rgba(23,32,58,0.06), 0 8px 24px rgba(23,32,58,0.05);
+    --topbar-h: 56px;
+    --safe-b: env(safe-area-inset-bottom, 0px);
+    --safe-t: env(safe-area-inset-top, 0px);
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;height:100%;}
@@ -25,36 +28,61 @@
     color:var(--ink);
     font-family:'IBM Plex Sans', sans-serif;
     -webkit-font-smoothing:antialiased;
+    overscroll-behavior:none;
   }
+  body.drawer-open{overflow:hidden;}
+  button{font-family:inherit;}
+
   .app{
     display:grid;
     grid-template-columns: 260px 1fr 300px;
-    grid-template-rows: 56px 1fr;
+    grid-template-rows: var(--topbar-h) 1fr;
     height:100vh;
+    height:100dvh;
     min-height:560px;
   }
+
   /* TOP BAR */
   .topbar{
     grid-column:1/4;
     display:flex;
     align-items:center;
     justify-content:space-between;
+    gap:8px;
     padding:0 20px;
+    padding-top:var(--safe-t);
     border-bottom:1px solid var(--line);
     background:var(--paper-raised);
+    height:calc(var(--topbar-h) + var(--safe-t));
+    position:relative;
+    z-index:20;
   }
+  .topbar-left, .topbar-right{
+    display:flex;align-items:center;gap:8px;
+  }
+  .icon-btn{
+    display:none;
+    align-items:center;justify-content:center;
+    width:38px;height:38px;
+    border-radius:9px;border:1px solid var(--line);
+    background:var(--paper);cursor:pointer;color:var(--ink);
+    flex-shrink:0;
+  }
+  .icon-btn svg{width:17px;height:17px;}
   .brand{
     display:flex;align-items:center;gap:10px;
     font-family:'Source Serif 4', serif;
     font-weight:700;
     font-size:17px;
     letter-spacing:-0.01em;
+    white-space:nowrap;
   }
   .brand .mark{
     width:26px;height:26px;border-radius:6px;
     background:linear-gradient(155deg, var(--ink), #2c3a63);
     display:flex;align-items:center;justify-content:center;
     color:#fff;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500;
+    flex-shrink:0;
   }
   .status-pill{
     font-family:'IBM Plex Mono', monospace;
@@ -67,14 +95,30 @@
     border:1px solid var(--line);
     border-radius:20px;
     background:var(--paper);
+    white-space:nowrap;
   }
-  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-red);}
+  .status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-red);flex-shrink:0;}
   .status-pill.ready .status-dot{background:var(--accent-teal);}
+  .status-label-full{display:inline;}
+  .status-label-short{display:none;}
+
+  /* DRAWER BACKDROP (mobile only) */
+  .drawer-backdrop{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(23,32,58,0.42);
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .drawer-backdrop.open{opacity:1;pointer-events:auto;}
 
   /* PANELS */
   .panel{
     overflow-y:auto;
     padding:18px 16px;
+    padding-bottom:calc(18px + var(--safe-b));
   }
   .panel-left{
     border-right:1px solid var(--line);
@@ -83,6 +127,17 @@
   .panel-right{
     border-left:1px solid var(--line);
     background:var(--paper-raised);
+  }
+  .panel-mobile-header{
+    display:none;
+    align-items:center;justify-content:space-between;
+    margin:-4px -4px 14px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+  .panel-mobile-header .title{
+    font-family:'Source Serif 4', serif;
+    font-weight:700;font-size:17px;
   }
   .panel-title{
     font-family:'IBM Plex Mono', monospace;
@@ -109,8 +164,8 @@
   }
   .source-list{list-style:none;margin:10px 0 0;padding:0;}
   .source-list li{
-    font-size:12.5px;
-    padding:7px 8px;
+    font-size:13px;
+    padding:10px 8px;
     border-radius:6px;
     cursor:pointer;
     color:var(--ink);
@@ -126,9 +181,11 @@
     display:flex;flex-direction:column;
     padding:0;
     background:var(--paper);
+    min-width:0;
   }
   .chat-scroll{
     flex:1;overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
     padding:26px 8% 10px;
   }
   .hero{
@@ -154,7 +211,7 @@
   }
   .chip{
     font-size:12.5px;
-    padding:8px 14px;
+    padding:9px 14px;
     border:1px solid var(--line);
     border-radius:20px;
     background:var(--paper-raised);
@@ -181,6 +238,8 @@
   .msg .bubble{
     font-size:14.5px;line-height:1.65;
     padding-top:2px;
+    min-width:0;
+    overflow-wrap:break-word;
   }
   .msg.user .bubble{font-weight:500;}
   .msg .bubble p{margin:0 0 10px;}
@@ -204,7 +263,8 @@
   @keyframes blink{0%,80%,100%{opacity:.25;}40%{opacity:1;}}
 
   .composer{
-    padding:14px 8% 20px;
+    padding:12px 8%;
+    padding-bottom:calc(16px + var(--safe-b));
     border-top:1px solid var(--line);
     background:var(--paper-raised);
   }
@@ -223,7 +283,7 @@
     line-height:1.5;padding:8px 0;max-height:140px;outline:none;color:var(--ink);
   }
   .send-btn{
-    width:34px;height:34px;border-radius:9px;border:none;
+    width:38px;height:38px;border-radius:10px;border:none;
     background:var(--ink);color:#fff;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;transition:background .12s ease;
@@ -243,13 +303,13 @@
     font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;
     margin:0 0 9px;color:var(--muted);font-weight:600;font-family:'IBM Plex Mono',monospace;
   }
-  .fact-row{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--line);}
+  .fact-row{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);}
   .fact-row:last-child{border-bottom:none;}
   .fact-row .k{color:var(--muted);}
   .fact-row .v{font-weight:600;text-align:right;}
   .stars{color:var(--accent-gold);font-size:11px;letter-spacing:1px;}
   .quick-q{
-    font-size:12.5px;padding:8px 9px;border-radius:7px;margin-bottom:6px;
+    font-size:13px;padding:10px 9px;border-radius:7px;margin-bottom:6px;
     background:var(--paper-raised);border:1px solid var(--line);cursor:pointer;
     transition:border-color .12s ease;
   }
@@ -258,9 +318,63 @@
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:#D8D4C8;border-radius:8px;}
 
+  /* ---------------------------------------------------------
+     MOBILE / TABLET LAYOUT
+     Sources + Studio become slide-in drawers over the chat.
+  --------------------------------------------------------- */
   @media (max-width:880px){
-    .app{grid-template-columns: 1fr; grid-template-rows:56px 1fr;}
-    .panel-left,.panel-right{display:none;}
+    .app{grid-template-columns: 1fr; grid-template-rows: var(--topbar-h) 1fr;}
+
+    .icon-btn{display:flex;}
+    .brand{font-size:15.5px;}
+    .brand .mark{width:24px;height:24px;font-size:10px;}
+    .status-label-full{display:none;}
+    .status-label-short{display:inline;}
+    .status-pill{padding:5px 9px;}
+
+    .drawer-backdrop{display:block;}
+
+    .panel-left, .panel-right{
+      position:fixed;
+      top:0; bottom:0;
+      width:min(84vw, 320px);
+      z-index:40;
+      padding-top:calc(18px + var(--safe-t));
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.02), 0 12px 40px rgba(23,32,58,0.25);
+      transition:transform .26s cubic-bezier(.22,.61,.36,1);
+    }
+    .panel-left{
+      left:0;
+      transform:translateX(-100%);
+      border-right:1px solid var(--line);
+    }
+    .panel-right{
+      right:0;
+      transform:translateX(100%);
+      border-left:1px solid var(--line);
+    }
+    .panel-left.open{transform:translateX(0);}
+    .panel-right.open{transform:translateX(0);}
+
+    .panel-mobile-header{display:flex;}
+
+    .chat-scroll{padding:18px 5% 8px;}
+    .hero{margin-top:8vh;}
+    .hero h1{font-size:23px;}
+    .hero p{font-size:13.5px;}
+    .msg{max-width:100%;}
+
+    .composer{padding:10px 4%; padding-bottom:calc(14px + var(--safe-b));}
+    .composer-note{font-size:10.5px;padding:0 4px;}
+
+    /* 16px min font-size on inputs prevents iOS Safari auto-zoom */
+    textarea#composerInput{font-size:16px;}
+  }
+
+  @media (max-width:420px){
+    .brand span.brand-text{display:none;}
+    .topbar{padding:0 12px; padding-top:var(--safe-t);}
+    .status-pill{padding:5px 7px;}
   }
 </style>
 </head>
@@ -268,13 +382,33 @@
 
 <div class="app">
   <div class="topbar">
-    <div class="brand"><div class="mark">PTE</div> PTE Prep Hub</div>
-    <div class="status-pill" id="apiStatus">
-      <span class="status-dot"></span><span id="apiStatusLabel">Checking server…</span>
+    <div class="topbar-left">
+      <button class="icon-btn" id="openSources" aria-label="Open sources">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="14" y2="17"/></svg>
+      </button>
+      <div class="brand"><div class="mark">PTE</div><span class="brand-text">PTE Prep Hub</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="status-pill" id="apiStatus">
+        <span class="status-dot"></span>
+        <span class="status-label-full" id="apiStatusLabel">Checking server…</span>
+        <span class="status-label-short" id="apiStatusLabelShort">···</span>
+      </div>
+      <button class="icon-btn" id="openStudio" aria-label="Open studio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="14" y1="4" x2="14" y2="20"/></svg>
+      </button>
     </div>
   </div>
 
-  <div class="panel panel-left">
+  <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+  <div class="panel panel-left" id="panelLeft">
+    <div class="panel-mobile-header">
+      <span class="title">Sources</span>
+      <button class="icon-btn" id="closeSources" aria-label="Close sources" style="display:flex;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+    </div>
     <div class="panel-title">Source</div>
     <div class="source-doc">
       <div class="doc-name">📘 PTE Academic Handbook</div>
@@ -301,7 +435,13 @@
     </div>
   </div>
 
-  <div class="panel panel-right">
+  <div class="panel panel-right" id="panelRight">
+    <div class="panel-mobile-header">
+      <span class="title">Studio</span>
+      <button class="icon-btn" id="closeStudio" aria-label="Close studio" style="display:flex;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+    </div>
     <div class="panel-title">Studio</div>
     <div class="studio-card">
       <h3>Test at a glance</h3>
@@ -346,6 +486,33 @@ const chipRow = document.getElementById('chipRow');
 const quickQuestions = document.getElementById('quickQuestions');
 const apiStatus = document.getElementById('apiStatus');
 const apiStatusLabel = document.getElementById('apiStatusLabel');
+const apiStatusLabelShort = document.getElementById('apiStatusLabelShort');
+
+/* ---------------------------------------------------------
+   MOBILE DRAWERS
+--------------------------------------------------------- */
+const panelLeft = document.getElementById('panelLeft');
+const panelRight = document.getElementById('panelRight');
+const drawerBackdrop = document.getElementById('drawerBackdrop');
+
+function openDrawer(panel){
+  closeDrawers();
+  panel.classList.add('open');
+  drawerBackdrop.classList.add('open');
+  document.body.classList.add('drawer-open');
+}
+function closeDrawers(){
+  panelLeft.classList.remove('open');
+  panelRight.classList.remove('open');
+  drawerBackdrop.classList.remove('open');
+  document.body.classList.remove('drawer-open');
+}
+document.getElementById('openSources').addEventListener('click', () => openDrawer(panelLeft));
+document.getElementById('openStudio').addEventListener('click', () => openDrawer(panelRight));
+document.getElementById('closeSources').addEventListener('click', closeDrawers);
+document.getElementById('closeStudio').addEventListener('click', closeDrawers);
+drawerBackdrop.addEventListener('click', closeDrawers);
+window.addEventListener('resize', () => { if(window.innerWidth > 880) closeDrawers(); });
 
 function initChips(){
   SUGGESTED.slice(0,4).forEach(q => {
@@ -362,7 +529,7 @@ function initQuickQuestions(){
     const d = document.createElement('div');
     d.className = 'quick-q';
     d.textContent = q;
-    d.onclick = () => { composerInput.value = q; sendMessage(); };
+    d.onclick = () => { composerInput.value = q; closeDrawers(); sendMessage(); };
     quickQuestions.appendChild(d);
   });
 }
@@ -378,6 +545,7 @@ async function loadSources(){
         document.querySelectorAll('.source-list li').forEach(el => el.classList.remove('active'));
         li.classList.add('active');
         composerInput.value = `Tell me about: ${s.title}`;
+        closeDrawers();
         composerInput.focus();
       };
       sourceList.appendChild(li);
@@ -394,11 +562,14 @@ async function checkHealth(){
     if(data.connected){
       apiStatus.classList.add('ready');
       apiStatusLabel.textContent = `Connected · ${data.model}`;
+      apiStatusLabelShort.textContent = 'Ready';
     } else {
       apiStatusLabel.textContent = 'No API key on server';
+      apiStatusLabelShort.textContent = 'No key';
     }
   }catch(err){
     apiStatusLabel.textContent = 'Server unreachable';
+    apiStatusLabelShort.textContent = 'Offline';
   }
 }
 
@@ -415,7 +586,7 @@ composerInput.addEventListener('input', () => {
   composerInput.style.height = Math.min(composerInput.scrollHeight, 140) + 'px';
 });
 composerInput.addEventListener('keydown', (e) => {
-  if(e.key === 'Enter' && !e.shiftKey){
+  if(e.key === 'Enter' && !e.shiftKey && window.innerWidth > 880){
     e.preventDefault();
     sendMessage();
   }
