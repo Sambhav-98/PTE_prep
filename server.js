@@ -13,13 +13,15 @@ const PORT = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const REFERENCE_PDF_PATH = process.env.REFERENCE_PDF_PATH;
+const REFERENCE_PDF_DRIVE_URL = process.env.REFERENCE_PDF_DRIVE_URL;
 
-// Holds the parsed reference index in memory once loaded. Stays null if no
-// REFERENCE_PDF_PATH is set, or if the file can't be found/parsed — the app
-// works fine without it either way.
+// Holds the parsed reference index in memory once loaded. Stays empty if
+// nothing is configured, or if loading fails — the app works fine either
+// way.
 let referenceChunks = [];
 let referencePageCount = 0;
 let referenceReady = false;
+let referenceSource = null; // 'local' | 'gdrive' | null
 
 app.use(express.json());
 
@@ -38,19 +40,51 @@ app.get('/', (req, res) => {
  * If nothing is configured, this silently no-ops and the app runs exactly
  * as it did before.
  */
+/**
+ * Loads a personal reference PDF, if configured. Two sources are supported,
+ * tried in this order:
+ *   1. REFERENCE_PDF_PATH — a local file. Best when the server has real
+ *      persistent storage (your own VPS, or a Render paid instance with a
+ *      persistent disk attached).
+ *   2. REFERENCE_PDF_DRIVE_URL — a Google Drive share link or file ID.
+ *      Fetched fresh into memory on every start. Works on free hosting
+ *      tiers with no persistent disk at all (e.g. Render's free plan),
+ *      since nothing needs to survive a restart.
+ *
+ * Either way, nothing derived from the PDF is ever written to disk —
+ * it's parsed into memory and stays only in this running process. If
+ * neither is configured (or loading fails), this silently no-ops and the
+ * app runs exactly as it did before.
+ */
 async function initReference() {
-  if (!REFERENCE_PDF_PATH) return;
-  if (!fs.existsSync(REFERENCE_PDF_PATH)) {
-    console.log(`Reference material: REFERENCE_PDF_PATH is set but no file was found at ${REFERENCE_PDF_PATH}`);
-    return;
-  }
   try {
-    console.log('Reference material: parsing PDF (this happens in memory only, each time the server starts)...');
-    const pages = await reference.parsePdfPages(REFERENCE_PDF_PATH);
+    let pages;
+
+    if (REFERENCE_PDF_PATH && fs.existsSync(REFERENCE_PDF_PATH)) {
+      console.log('Reference material: parsing local PDF (in memory only)...');
+      pages = await reference.parsePdfPages(REFERENCE_PDF_PATH);
+      referenceSource = 'local';
+    } else if (REFERENCE_PDF_DRIVE_URL) {
+      const fileId = reference.extractDriveFileId(REFERENCE_PDF_DRIVE_URL);
+      if (!fileId) {
+        console.log('Reference material: could not extract a file ID from REFERENCE_PDF_DRIVE_URL.');
+        return;
+      }
+      console.log('Reference material: fetching PDF from Google Drive (in memory only)...');
+      const buffer = await reference.fetchGoogleDriveFile(fileId);
+      pages = await reference.parsePdfBuffer(buffer);
+      referenceSource = 'gdrive';
+    } else {
+      if (REFERENCE_PDF_PATH) {
+        console.log(`Reference material: REFERENCE_PDF_PATH is set but no file was found at ${REFERENCE_PDF_PATH}`);
+      }
+      return;
+    }
+
     referenceChunks = reference.buildChunks(pages);
     referencePageCount = pages.length;
     referenceReady = true;
-    console.log(`Reference material: ready — ${pages.length} pages indexed in memory.`);
+    console.log(`Reference material: ready — ${pages.length} pages indexed in memory (source: ${referenceSource}).`);
   } catch (err) {
     console.log(`Reference material: failed to load — ${err.message}`);
   }
@@ -85,7 +119,7 @@ app.get('/api/sources', (req, res) => {
 // Lets the frontend show whether a personal reference PDF is connected,
 // without exposing its path, filename, or any of its content.
 app.get('/api/reference-status', (req, res) => {
-  res.json({ available: referenceReady, pages: referencePageCount });
+  res.json({ available: referenceReady, pages: referencePageCount, source: referenceSource });
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -127,7 +161,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [{ role: 'system', content: systemContent }, ...messages],
-        temperature: 1
+        temperature: 0.3
       })
     });
 

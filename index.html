@@ -867,9 +867,12 @@ async function checkReferenceStatus(){
   try{
     const res = await fetch('/api/reference-status');
     const data = await res.json();
-    metaEl.textContent = data.available
-      ? `Connected · ${data.pages} pages · local only`
-      : 'Not connected — see README';
+    if(!data.available){
+      metaEl.textContent = 'Not connected — see README';
+      return;
+    }
+    const sourceLabel = data.source === 'gdrive' ? 'Google Drive' : 'local file';
+    metaEl.textContent = `Connected · ${data.pages} pages · ${sourceLabel}`;
   }catch(err){
     metaEl.textContent = 'Not connected — see README';
   }

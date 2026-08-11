@@ -13,22 +13,43 @@ Three panels, like NotebookLM, plus a calendar:
 
 ## Optional: your own personal reference material
 
-You can point the app at a PDF you personally own (e.g. a practice-test book) for extra context, **without ever copying that file into this project**.
+You can point the app at a PDF you personally own (e.g. a practice-test book) for extra context, **without ever copying that file into this project**. There are two ways to point at it — use whichever fits your hosting situation.
 
-Setup:
-1. Keep the PDF wherever you like on your own machine or server — it does *not* need to be inside this project folder. (If you do put it in a `reference/` folder here for convenience, it's already gitignored, along with any `*.pdf`.)
-2. In `.env`, set `REFERENCE_PDF_PATH` to its absolute path, e.g.:
-   ```
-   REFERENCE_PDF_PATH=/Users/you/Documents/pte-practice-tests-plus.pdf
-   ```
-3. Restart the server. The Sources panel will show "Personal Reference — Connected · N pages · local only" once it's loaded.
+### Option A — a local file path (`REFERENCE_PDF_PATH`)
 
-**How it stays lightweight and copyright-safe by design:**
-- The PDF is read directly from the path you give it — never copied into this project, never committed to git, never uploaded anywhere.
-- `reference.js` parses it into memory only (a few seconds at startup) and builds a small keyword-search index. Nothing extracted from it is written to disk.
+Best when your server has real persistent storage: your own VPS, or a Render instance on a paid plan with a [persistent disk](https://render.com/docs/disks) attached. Render's free tier has an *ephemeral* filesystem, so a local path won't survive a redeploy there — use Option B instead in that case.
+
+1. Keep the PDF wherever you like on your server — it does *not* need to be inside this project folder. (If you do put it in a `reference/` folder here for convenience, it's already gitignored, along with any `*.pdf`.)
+2. In `.env`:
+   ```
+   REFERENCE_PDF_PATH=/absolute/path/to/your-book.pdf
+   ```
+3. Restart the server.
+
+### Option B — a Google Drive link (`REFERENCE_PDF_DRIVE_URL`)
+
+Works on free hosting tiers (including Render's free plan) because nothing needs to persist on disk — the file is fetched fresh into memory every time the server starts.
+
+1. Upload the PDF to Google Drive and set its sharing to **"Anyone with the link" → Viewer**. (This makes the file fetchable by an unauthenticated request — it's not indexed or searchable by Google, but anyone who has the exact link/ID could access it, similar in spirit to an unguessable S3 link. It is not the same as keeping it fully private to your account.)
+2. Copy the share link, and in `.env`:
+   ```
+   REFERENCE_PDF_DRIVE_URL=https://drive.google.com/file/d/YOUR_FILE_ID/view?usp=sharing
+   ```
+   (A bare file ID works too.)
+3. Restart the server.
+
+**A caveat worth knowing:** Drive doesn't offer a documented public API for this — the app uses the same trick tools like `gdown` use, extracting a one-time confirmation token from Drive's "can't scan this file for viruses" interstitial page (which appears for files over ~25MB). This depends on the current structure of that page, which Google could change without notice and silently break this feature. If it stops working, check the server logs (`Reference material: ...`) for the specific error, and consider switching to Option A or a dedicated file host (S3/R2 presigned URL, etc.) if you need something more durable.
+
+If both env vars are set, `REFERENCE_PDF_PATH` takes priority; Google Drive is only tried if no local file is found.
+
+Either way, once loaded, the Sources panel shows "Personal Reference — Connected · N pages · local file" or "· Google Drive".
+
+**How it stays lightweight and copyright-safe by design, regardless of which option you use:**
+- The PDF is never copied into this project, never committed to git, never uploaded anywhere by the app itself.
+- `reference.js` parses it into memory only (a few seconds at startup, even from a fresh Drive fetch) and builds a small keyword-search index. Nothing extracted from it is written to disk.
 - On each chat message, the server does a keyword search over that index and pulls back at most 2–3 short excerpts, **hard-capped at 900 characters total** (roughly a paragraph or two) — never the full document, and never even a full page.
 - The system prompt explicitly instructs the model to paraphrase those excerpts rather than quote them at length, and to refer to it generically as "your reference material."
-- If `REFERENCE_PDF_PATH` is unset, missing, or fails to parse, the app just runs without it — nothing breaks.
+- If neither env var is set, or loading fails for any reason, the app just runs without it — nothing else breaks.
 
 This is meant for supplementary, on-demand context from something you already own, not for turning the app into a way to read the whole book through chat.
 
@@ -93,7 +114,7 @@ Note: the server only exposes `index.html` itself over HTTP (via `GET /`) — it
   - `POST /api/tasks` — creates a task (`{ date: "YYYY-MM-DD", title }`)
   - `PUT /api/tasks/:id` — updates a task (`{ done }` and/or `{ title }` and/or `{ date }`)
   - `DELETE /api/tasks/:id` — deletes a task
-  - `GET /api/reference-status` — reports whether a personal reference PDF is loaded, and its page count (never its path, filename, or content)
+  - `GET /api/reference-status` — reports whether a personal reference PDF is loaded, its page count, and which source loaded it (`"local"` or `"gdrive"`) — never its path, filename, or content
 - `server.js` builds a system prompt from `knowledge.js` on every chat request and sends it to OpenAI's Chat Completions API using the key from `.env`.
 - Because the key stays server-side, this is safe to deploy publicly (e.g. Render, Railway, Fly.io, a VPS) without exposing your OpenAI key to visitors.
 - Notes and roadmap progress are stored in flat JSON files under `data/` via `storage.js`, and are shared by anyone using the deployed app (there's no login system — this is built for one student's own instance, not multi-tenant use).
