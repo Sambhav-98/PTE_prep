@@ -35,7 +35,7 @@
 
   .app{
     display:grid;
-    grid-template-columns: 260px 1fr 300px;
+    grid-template-columns: 260px 1fr 320px;
     grid-template-rows: var(--topbar-h) 1fr;
     height:100vh;
     height:100dvh;
@@ -69,6 +69,7 @@
     flex-shrink:0;
   }
   .icon-btn svg{width:17px;height:17px;}
+  .icon-btn.always-visible{display:flex;}
   .brand{
     display:flex;align-items:center;gap:10px;
     font-family:'Source Serif 4', serif;
@@ -127,6 +128,8 @@
   .panel-right{
     border-left:1px solid var(--line);
     background:var(--paper-raised);
+    display:flex;
+    flex-direction:column;
   }
   .panel-mobile-header{
     display:none;
@@ -240,6 +243,7 @@
     padding-top:2px;
     min-width:0;
     overflow-wrap:break-word;
+    flex:1;
   }
   .msg.user .bubble{font-weight:500;}
   .msg .bubble p{margin:0 0 10px;}
@@ -261,6 +265,16 @@
   .thinking span:nth-child(2){animation-delay:.15s;}
   .thinking span:nth-child(3){animation-delay:.3s;}
   @keyframes blink{0%,80%,100%{opacity:.25;}40%{opacity:1;}}
+
+  .msg-actions{margin-top:8px;display:flex;gap:8px;}
+  .save-btn{
+    font-size:11px;border:1px solid var(--line);background:var(--paper-raised);
+    border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--muted);
+    display:inline-flex;align-items:center;gap:5px;transition:border-color .12s ease, color .12s ease;
+  }
+  .save-btn:hover{border-color:var(--accent-gold);color:var(--ink);}
+  .save-btn.saved{color:var(--accent-teal);border-color:var(--accent-teal);cursor:default;}
+  .save-btn svg{width:12px;height:12px;}
 
   .composer{
     padding:12px 8%;
@@ -295,6 +309,19 @@
   }
 
   /* RIGHT PANEL - STUDIO */
+  .studio-tabs{
+    display:flex;gap:4px;margin-bottom:14px;flex-shrink:0;
+    background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:3px;
+  }
+  .studio-tab{
+    flex:1;border:none;background:transparent;padding:7px 4px;border-radius:7px;
+    font-size:11px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;
+    letter-spacing:.02em;color:var(--muted);cursor:pointer;
+  }
+  .studio-tab.active{background:var(--paper-raised);color:var(--ink);box-shadow:var(--shadow);font-weight:600;}
+  .studio-tab-content{display:none;}
+  .studio-tab-content.active{display:block;}
+
   .studio-card{
     border:1px solid var(--line);border-radius:10px;
     padding:13px 13px 12px;margin-bottom:12px;background:var(--paper);
@@ -314,6 +341,151 @@
     transition:border-color .12s ease;
   }
   .quick-q:hover{border-color:var(--accent-teal);}
+
+  /* ROADMAP */
+  .roadmap-progress{margin-bottom:14px;}
+  .roadmap-progress-track{height:6px;border-radius:4px;background:var(--line);overflow:hidden;}
+  .roadmap-progress-fill{height:100%;width:0%;background:var(--accent-teal);transition:width .25s ease;}
+  .roadmap-progress-label{font-size:11px;color:var(--muted);margin-top:6px;font-family:'IBM Plex Mono',monospace;}
+  .phase{border:1px solid var(--line);border-radius:10px;margin-bottom:10px;background:var(--paper);overflow:hidden;}
+  .phase-header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:10px 12px;cursor:pointer;gap:8px;
+  }
+  .phase-header .phase-title{font-weight:600;font-size:12.5px;}
+  .phase-header .phase-time{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+  .phase-chevron{transition:transform .18s ease;flex-shrink:0;color:var(--muted);}
+  .phase.open .phase-chevron{transform:rotate(90deg);}
+  .phase-steps{padding:0 12px 10px;display:none;}
+  .phase.open .phase-steps{display:block;}
+  .step-item{display:flex;gap:9px;padding:9px 0;border-top:1px dashed var(--line);}
+  .step-item:first-child{border-top:none;}
+  .step-check{
+    width:17px;height:17px;border-radius:5px;border:1.5px solid var(--line);flex-shrink:0;margin-top:2px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--paper-raised);
+    color:transparent;font-size:11px;
+  }
+  .step-check.done{background:var(--accent-teal);border-color:var(--accent-teal);color:#fff;}
+  .step-body{flex:1;min-width:0;}
+  .step-title{font-size:12.5px;font-weight:500;}
+  .step-body.done .step-title{text-decoration:line-through;color:var(--muted);}
+  .step-detail{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5;}
+  .step-why{font-size:10.5px;color:var(--accent-teal);margin-top:4px;line-height:1.4;}
+
+  /* NOTEBOOK */
+  .notebook-add{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--paper);margin-bottom:14px;}
+  .notebook-add input, .notebook-add textarea{
+    width:100%;border:1px solid var(--line);border-radius:7px;padding:8px 9px;
+    font-family:inherit;font-size:12.5px;margin-bottom:7px;outline:none;background:var(--paper-raised);color:var(--ink);
+  }
+  .notebook-add input:focus, .notebook-add textarea:focus{border-color:var(--accent-gold);}
+  .notebook-add textarea{resize:vertical;min-height:64px;}
+  .notebook-add button{
+    width:100%;padding:9px;border-radius:7px;border:none;background:var(--ink);color:#fff;
+    font-size:12.5px;font-weight:500;cursor:pointer;
+  }
+  .notebook-add button:hover{background:#2c3a63;}
+  .note-card{border:1px solid var(--line);border-radius:10px;padding:10px 30px 10px 11px;margin-bottom:9px;background:var(--paper);position:relative;}
+  .note-card .note-title{font-weight:600;font-size:12.5px;margin-bottom:3px;}
+  .note-card .note-meta{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;text-transform:uppercase;letter-spacing:.03em;}
+  .note-card .note-content{font-size:12px;line-height:1.55;color:var(--ink);white-space:pre-wrap;overflow-wrap:break-word;}
+  .note-delete{
+    position:absolute;top:8px;right:8px;background:none;border:none;color:var(--muted);
+    cursor:pointer;padding:4px;line-height:0;
+  }
+  .note-delete:hover{color:var(--accent-red);}
+  .note-delete svg{width:13px;height:13px;}
+  .note-empty{font-size:12px;color:var(--muted);text-align:center;padding:24px 10px;}
+
+  /* DASHBOARD RINGS */
+  .rings-row{display:flex;gap:10px;margin-bottom:12px;}
+  .ring-card{
+    flex:1;border:1px solid var(--line);border-radius:10px;background:var(--paper);
+    padding:12px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  }
+  .ring-card svg{width:76px;height:76px;}
+  .ring-track{fill:none;stroke:var(--line);stroke-width:8;}
+  .ring-fill{fill:none;stroke:var(--accent-teal);stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .5s ease;}
+  .ring-label{font-size:10.5px;color:var(--muted);text-align:center;line-height:1.35;}
+  .ring-label strong{color:var(--ink);font-weight:600;display:block;font-size:11px;}
+
+  /* CALENDAR MODAL */
+  .cal-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(23,32,58,0.5);
+    z-index:60;align-items:center;justify-content:center;padding:20px;
+    opacity:0;pointer-events:none;transition:opacity .2s ease;
+  }
+  .cal-backdrop.open{display:flex;opacity:1;pointer-events:auto;}
+  .cal-modal{
+    background:var(--paper-raised);border-radius:16px;
+    width:min(720px, 100%);max-height:88vh;overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:0 20px 60px rgba(23,32,58,0.3);
+  }
+  .cal-modal-header{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:14px 18px;border-bottom:1px solid var(--line);flex-shrink:0;
+  }
+  .cal-modal-header h2{font-family:'Source Serif 4',serif;font-size:18px;margin:0;font-weight:700;white-space:nowrap;}
+  .cal-nav{display:flex;align-items:center;gap:6px;}
+  .cal-nav-btn{
+    width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--paper);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink);font-size:15px;
+  }
+  .cal-nav-btn:hover{border-color:var(--accent-gold);}
+  .cal-today-btn{
+    font-size:10.5px;font-family:'IBM Plex Mono',monospace;padding:6px 10px;border-radius:8px;
+    border:1px solid var(--line);background:var(--paper);cursor:pointer;color:var(--muted);
+  }
+  .cal-today-btn:hover{color:var(--ink);border-color:var(--accent-gold);}
+  .cal-body{display:flex;flex:1;min-height:0;overflow:hidden;}
+  .cal-grid-wrap{flex:1.3;padding:16px 18px;overflow-y:auto;min-width:0;}
+  .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px;}
+  .cal-weekdays span{font-size:10px;text-align:center;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .cal-day{
+    aspect-ratio:1;border-radius:9px;border:1px solid transparent;background:var(--paper);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    cursor:pointer;position:relative;gap:3px;transition:border-color .12s ease, background .12s ease;
+  }
+  .cal-day:hover{border-color:var(--line);}
+  .cal-day.other-month{opacity:0.3;}
+  .cal-day.today{border-color:var(--accent-teal);}
+  .cal-day.selected{background:var(--ink);}
+  .cal-day.selected .cal-day-num{color:#fff;}
+  .cal-day-num{font-size:12.5px;font-weight:500;}
+  .cal-day-dots{display:flex;gap:2px;height:4px;}
+  .cal-day-dot{width:4px;height:4px;border-radius:50%;background:var(--accent-gold);}
+  .cal-day.selected .cal-day-dot{background:#fff;}
+  .cal-day-panel{
+    flex:1;min-width:210px;border-left:1px solid var(--line);
+    padding:16px 18px;overflow-y:auto;background:var(--paper);
+  }
+  .cal-day-panel h3{font-family:'Source Serif 4',serif;font-size:15px;margin:0 0 12px;font-weight:700;}
+  .cal-task-add{margin-bottom:14px;display:flex;gap:6px;}
+  .cal-task-add input{
+    flex:1;min-width:0;border:1px solid var(--line);border-radius:7px;padding:8px 9px;
+    font-family:inherit;font-size:12.5px;outline:none;background:var(--paper-raised);color:var(--ink);
+  }
+  .cal-task-add input:focus{border-color:var(--accent-gold);}
+  .cal-task-add button{
+    padding:8px 12px;border-radius:7px;border:none;background:var(--ink);color:#fff;
+    font-size:12.5px;font-weight:500;cursor:pointer;flex-shrink:0;
+  }
+  .cal-task-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px dashed var(--line);}
+  .cal-task-item:first-child{border-top:none;}
+  .cal-task-check{
+    width:16px;height:16px;border-radius:5px;border:1.5px solid var(--line);flex-shrink:0;margin-top:2px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;background:var(--paper-raised);
+    color:transparent;font-size:10px;
+  }
+  .cal-task-check.done{background:var(--accent-teal);border-color:var(--accent-teal);color:#fff;}
+  .cal-task-title{font-size:12.5px;flex:1;min-width:0;overflow-wrap:break-word;padding-top:1px;}
+  .cal-task-title.done{text-decoration:line-through;color:var(--muted);}
+  .cal-task-delete{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px;flex-shrink:0;}
+  .cal-task-delete:hover{color:var(--accent-red);}
+  .cal-task-delete svg{width:12px;height:12px;}
+  .cal-day-empty{font-size:12px;color:var(--muted);padding:6px 0;}
 
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:#D8D4C8;border-radius:8px;}
@@ -337,7 +509,7 @@
     .panel-left, .panel-right{
       position:fixed;
       top:0; bottom:0;
-      width:min(84vw, 320px);
+      width:min(88vw, 340px);
       z-index:40;
       padding-top:calc(18px + var(--safe-t));
       box-shadow: 0 0 0 1px rgba(0,0,0,0.02), 0 12px 40px rgba(23,32,58,0.25);
@@ -369,6 +541,14 @@
 
     /* 16px min font-size on inputs prevents iOS Safari auto-zoom */
     textarea#composerInput{font-size:16px;}
+    .notebook-add input, .notebook-add textarea{font-size:16px;}
+    .cal-task-add input{font-size:16px;}
+
+    .cal-backdrop{padding:0;}
+    .cal-modal{width:100%;height:100%;max-height:100dvh;border-radius:0;}
+    .cal-body{flex-direction:column;}
+    .cal-day-panel{border-left:none;border-top:1px solid var(--line);min-width:0;}
+    .ring-card svg{width:64px;height:64px;}
   }
 
   @media (max-width:420px){
@@ -394,6 +574,9 @@
         <span class="status-label-full" id="apiStatusLabel">Checking server…</span>
         <span class="status-label-short" id="apiStatusLabelShort">···</span>
       </div>
+      <button class="icon-btn always-visible" id="openCalendar" aria-label="Open calendar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </button>
       <button class="icon-btn" id="openStudio" aria-label="Open studio">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="14" y1="4" x2="14" y2="20"/></svg>
       </button>
@@ -422,7 +605,7 @@
     <div class="chat-scroll" id="chatScroll">
       <div class="hero" id="heroBlock">
         <h1>Ask the PTE handbook anything.</h1>
-        <p>This is grounded entirely in the uploaded PTE Academic handbook — scoring breakdowns, task strategies, and templates.</p>
+        <p>This is grounded entirely in the uploaded PTE Academic handbook — scoring breakdowns, task strategies, and templates. Save any answer to your Notebook, or open the Roadmap for a step-by-step study plan.</p>
         <div class="chip-row" id="chipRow"></div>
       </div>
     </div>
@@ -442,25 +625,89 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
       </button>
     </div>
-    <div class="panel-title">Studio</div>
-    <div class="studio-card">
-      <h3>Test at a glance</h3>
-      <div class="fact-row"><span class="k">Duration</span><span class="v">~2h 15m</span></div>
-      <div class="fact-row"><span class="k">Modules</span><span class="v">4</span></div>
-      <div class="fact-row"><span class="k">Score range</span><span class="v">10–90</span></div>
-      <div class="fact-row"><span class="k">Results in</span><span class="v">1–2 days</span></div>
+
+    <div class="studio-tabs">
+      <button class="studio-tab active" data-tab="dashboard">Dashboard</button>
+      <button class="studio-tab" data-tab="roadmap">Roadmap</button>
+      <button class="studio-tab" data-tab="notebook">Notebook</button>
     </div>
-    <div class="studio-card">
-      <h3>Task weight (speaking)</h3>
-      <div class="fact-row"><span class="k">Read Aloud</span><span class="stars">★★★★★</span></div>
-      <div class="fact-row"><span class="k">Repeat Sentence</span><span class="stars">★★★★★</span></div>
-      <div class="fact-row"><span class="k">Retell Lecture</span><span class="stars">★★★★★</span></div>
-      <div class="fact-row"><span class="k">Describe Image</span><span class="stars">★★★</span></div>
-      <div class="fact-row"><span class="k">Answer Short Q</span><span class="stars">★★</span></div>
+
+    <div class="studio-tab-content active" data-tab-content="dashboard">
+      <div class="rings-row">
+        <div class="ring-card" id="ringRoadmap"></div>
+        <div class="ring-card" id="ringTasks"></div>
+      </div>
+      <div class="studio-card">
+        <h3>My progress</h3>
+        <div class="fact-row"><span class="k">Notes saved</span><span class="v" id="notesCountLabel">0</span></div>
+        <div class="fact-row"><span class="k">Tasks scheduled</span><span class="v" id="tasksCountLabel">0</span></div>
+      </div>
+      <div class="studio-card">
+        <h3>Test at a glance</h3>
+        <div class="fact-row"><span class="k">Duration</span><span class="v">~2h 15m</span></div>
+        <div class="fact-row"><span class="k">Modules</span><span class="v">4</span></div>
+        <div class="fact-row"><span class="k">Score range</span><span class="v">10–90</span></div>
+        <div class="fact-row"><span class="k">Results in</span><span class="v">1–2 days</span></div>
+      </div>
+      <div class="studio-card">
+        <h3>Task weight (speaking)</h3>
+        <div class="fact-row"><span class="k">Read Aloud</span><span class="stars">★★★★★</span></div>
+        <div class="fact-row"><span class="k">Repeat Sentence</span><span class="stars">★★★★★</span></div>
+        <div class="fact-row"><span class="k">Retell Lecture</span><span class="stars">★★★★★</span></div>
+        <div class="fact-row"><span class="k">Describe Image</span><span class="stars">★★★</span></div>
+        <div class="fact-row"><span class="k">Answer Short Q</span><span class="stars">★★</span></div>
+      </div>
+      <div class="studio-card">
+        <h3>Try asking</h3>
+        <div id="quickQuestions"></div>
+      </div>
     </div>
-    <div class="studio-card">
-      <h3>Try asking</h3>
-      <div id="quickQuestions"></div>
+
+    <div class="studio-tab-content" data-tab-content="roadmap">
+      <div class="roadmap-progress">
+        <div class="roadmap-progress-track"><div class="roadmap-progress-fill" id="roadmapProgressFill"></div></div>
+        <div class="roadmap-progress-label" id="roadmapProgressLabel">Loading roadmap…</div>
+      </div>
+      <div id="roadmapList"></div>
+    </div>
+
+    <div class="studio-tab-content" data-tab-content="notebook">
+      <div class="notebook-add">
+        <input type="text" id="noteTitleInput" placeholder="Note title (optional)">
+        <textarea id="noteContentInput" placeholder="Write a note — a mistake to fix, a phrase to remember, anything…"></textarea>
+        <button id="addNoteBtn">Save note</button>
+      </div>
+      <div id="notesList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="cal-backdrop" id="calBackdrop">
+  <div class="cal-modal">
+    <div class="cal-modal-header">
+      <h2 id="calMonthLabel">Loading…</h2>
+      <div class="cal-nav">
+        <button class="cal-nav-btn" id="calPrev" aria-label="Previous month">‹</button>
+        <button class="cal-today-btn" id="calToday">Today</button>
+        <button class="cal-nav-btn" id="calNext" aria-label="Next month">›</button>
+        <button class="icon-btn always-visible" id="closeCalendar" aria-label="Close calendar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cal-body">
+      <div class="cal-grid-wrap">
+        <div class="cal-weekdays"><span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span></div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div class="cal-day-panel">
+        <h3 id="calSelectedLabel">Select a day</h3>
+        <div class="cal-task-add">
+          <input type="text" id="calTaskInput" placeholder="Add a task…">
+          <button id="calAddTaskBtn">Add</button>
+        </div>
+        <div id="calTaskList"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -476,6 +723,7 @@ const SUGGESTED = [
 ];
 
 let messages = []; // {role, content}
+let savedNoteContents = new Set(); // dedupe guard for "save reply" buttons
 
 const chatScroll = document.getElementById('chatScroll');
 const heroBlock = document.getElementById('heroBlock');
@@ -513,6 +761,42 @@ document.getElementById('closeSources').addEventListener('click', closeDrawers);
 document.getElementById('closeStudio').addEventListener('click', closeDrawers);
 drawerBackdrop.addEventListener('click', closeDrawers);
 window.addEventListener('resize', () => { if(window.innerWidth > 880) closeDrawers(); });
+
+/* ---------------------------------------------------------
+   CIRCULAR PROGRESS RINGS (Dashboard)
+--------------------------------------------------------- */
+function renderRing(containerId, pct, title, sublabel){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const clamped = Math.max(0, Math.min(100, pct));
+  const r = 30, c = 2 * Math.PI * r;
+  const offset = c - (clamped / 100) * c;
+  el.innerHTML = `
+    <svg viewBox="0 0 80 80">
+      <circle class="ring-track" cx="40" cy="40" r="${r}"></circle>
+      <circle class="ring-fill" cx="40" cy="40" r="${r}"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+        transform="rotate(-90 40 40)"></circle>
+      <text x="40" y="45" text-anchor="middle"
+        style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;fill:var(--ink);">${clamped}%</text>
+    </svg>
+    <div class="ring-label"><strong>${title}</strong>${sublabel}</div>
+  `;
+}
+renderRing('ringRoadmap', 0, 'Roadmap', 'Loading…');
+renderRing('ringTasks', 0, 'Tasks', 'Loading…');
+
+/* ---------------------------------------------------------
+   STUDIO TABS
+--------------------------------------------------------- */
+document.querySelectorAll('.studio-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.studio-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.studio-tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.studio-tab-content[data-tab-content="${btn.dataset.tab}"]`).classList.add('active');
+  });
+});
 
 function initChips(){
   SUGGESTED.slice(0,4).forEach(q => {
@@ -579,6 +863,431 @@ loadSources();
 checkHealth();
 
 /* ---------------------------------------------------------
+   ROADMAP
+--------------------------------------------------------- */
+const roadmapList = document.getElementById('roadmapList');
+const roadmapProgressFill = document.getElementById('roadmapProgressFill');
+const roadmapProgressLabel = document.getElementById('roadmapProgressLabel');
+
+function escapeHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function loadRoadmap(){
+  try{
+    const res = await fetch('/api/roadmap');
+    const data = await res.json();
+    renderRoadmap(data.roadmap || []);
+  }catch(err){
+    roadmapProgressLabel.textContent = 'Could not load roadmap — is the server running?';
+  }
+}
+
+function renderRoadmap(phases){
+  roadmapList.innerHTML = '';
+  let total = 0, done = 0;
+
+  phases.forEach((phase, idx) => {
+    const phaseEl = document.createElement('div');
+    phaseEl.className = 'phase' + (idx === 0 ? ' open' : '');
+
+    const header = document.createElement('div');
+    header.className = 'phase-header';
+    header.innerHTML = `
+      <span class="phase-chevron">▸</span>
+      <span class="phase-title" style="flex:1;">${escapeHtml(phase.title)}</span>
+      <span class="phase-time">${escapeHtml(phase.timeframe)}</span>
+    `;
+    header.addEventListener('click', () => phaseEl.classList.toggle('open'));
+    phaseEl.appendChild(header);
+
+    const stepsWrap = document.createElement('div');
+    stepsWrap.className = 'phase-steps';
+
+    phase.steps.forEach(step => {
+      total++;
+      if(step.done) done++;
+
+      const item = document.createElement('div');
+      item.className = 'step-item';
+
+      const check = document.createElement('div');
+      check.className = 'step-check' + (step.done ? ' done' : '');
+      check.innerHTML = step.done ? '✓' : '';
+      check.addEventListener('click', () => toggleStep(step.id, !step.done, check, body));
+
+      const body = document.createElement('div');
+      body.className = 'step-body' + (step.done ? ' done' : '');
+      body.innerHTML = `
+        <div class="step-title">${escapeHtml(step.title)}</div>
+        <div class="step-detail">${escapeHtml(step.detail)}</div>
+        <div class="step-why">Why it matters: ${escapeHtml(step.why)}</div>
+      `;
+
+      item.appendChild(check);
+      item.appendChild(body);
+      stepsWrap.appendChild(item);
+    });
+
+    phaseEl.appendChild(stepsWrap);
+    roadmapList.appendChild(phaseEl);
+  });
+
+  updateRoadmapProgress(done, total);
+}
+
+function updateRoadmapProgress(done, total){
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  roadmapProgressFill.style.width = pct + '%';
+  roadmapProgressLabel.textContent = `${done} of ${total} steps complete · ${pct}%`;
+  renderRing('ringRoadmap', pct, 'Roadmap', `${done}/${total} steps`);
+}
+
+async function toggleStep(stepId, newDone, checkEl, bodyEl){
+  checkEl.classList.toggle('done', newDone);
+  checkEl.innerHTML = newDone ? '✓' : '';
+  bodyEl.classList.toggle('done', newDone);
+
+  const doneCount = document.querySelectorAll('.step-check.done').length;
+  const totalCount = document.querySelectorAll('.step-check').length;
+  updateRoadmapProgress(doneCount, totalCount);
+
+  try{
+    await fetch('/api/roadmap/progress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stepId, done: newDone })
+    });
+  }catch(err){
+    // Non-critical — local state already reflects the click even if the
+    // server write fails; it'll just re-sync on next reload.
+  }
+}
+
+loadRoadmap();
+
+/* ---------------------------------------------------------
+   NOTEBOOK
+--------------------------------------------------------- */
+const notesList = document.getElementById('notesList');
+const noteTitleInput = document.getElementById('noteTitleInput');
+const noteContentInput = document.getElementById('noteContentInput');
+const addNoteBtn = document.getElementById('addNoteBtn');
+
+function formatDate(iso){
+  try{
+    return new Date(iso).toLocaleDateString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  }catch(e){ return ''; }
+}
+
+async function loadNotes(){
+  try{
+    const res = await fetch('/api/notes');
+    const data = await res.json();
+    renderNotes(data.notes || []);
+  }catch(err){
+    notesList.innerHTML = '<div class="note-empty">Could not load notes — is the server running?</div>';
+  }
+}
+
+function renderNotes(notes){
+  const notesCountLabel = document.getElementById('notesCountLabel');
+  if(notesCountLabel) notesCountLabel.textContent = notes.length;
+
+  if(!notes.length){
+    notesList.innerHTML = '<div class="note-empty">No notes yet. Save a chat reply or write your own above.</div>';
+    return;
+  }
+  notesList.innerHTML = '';
+  notes.forEach(note => {
+    const card = document.createElement('div');
+    card.className = 'note-card';
+    const tag = note.type === 'chat' ? 'Saved reply' : 'Note';
+    card.innerHTML = `
+      <button class="note-delete" aria-label="Delete note" data-id="${note.id}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+      <div class="note-title">${escapeHtml(note.title)}</div>
+      <div class="note-meta">${tag} · ${formatDate(note.createdAt)}</div>
+      <div class="note-content">${escapeHtml(note.content)}</div>
+    `;
+    card.querySelector('.note-delete').addEventListener('click', () => deleteNote(note.id));
+    notesList.appendChild(card);
+  });
+}
+
+async function addNoteRequest(payload){
+  const res = await fetch('/api/notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if(!res.ok) throw new Error('Save failed');
+  return res.json();
+}
+
+addNoteBtn.addEventListener('click', async () => {
+  const content = noteContentInput.value.trim();
+  if(!content) { noteContentInput.focus(); return; }
+  addNoteBtn.disabled = true;
+  try{
+    await addNoteRequest({ title: noteTitleInput.value, content, type: 'manual' });
+    noteTitleInput.value = '';
+    noteContentInput.value = '';
+    await loadNotes();
+  }catch(err){
+    alert('Could not save note. Is the server running?');
+  }
+  addNoteBtn.disabled = false;
+});
+
+async function deleteNote(id){
+  try{
+    await fetch(`/api/notes/${id}`, { method: 'DELETE' });
+    await loadNotes();
+  }catch(err){
+    alert('Could not delete note. Is the server running?');
+  }
+}
+
+async function saveReplyAsNote(content, btnEl){
+  if(savedNoteContents.has(content)) return;
+  btnEl.disabled = true;
+  try{
+    const title = content.split('\n')[0].slice(0, 60) || 'Saved reply';
+    await addNoteRequest({ title, content, type: 'chat' });
+    savedNoteContents.add(content);
+    btnEl.classList.add('saved');
+    btnEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Saved to notebook';
+    loadNotes();
+  }catch(err){
+    btnEl.disabled = false;
+    alert('Could not save this reply. Is the server running?');
+  }
+}
+
+loadNotes();
+
+/* ---------------------------------------------------------
+   CALENDAR
+--------------------------------------------------------- */
+const calBackdrop = document.getElementById('calBackdrop');
+const calMonthLabel = document.getElementById('calMonthLabel');
+const calGrid = document.getElementById('calGrid');
+const calSelectedLabel = document.getElementById('calSelectedLabel');
+const calTaskList = document.getElementById('calTaskList');
+const calTaskInput = document.getElementById('calTaskInput');
+const calAddTaskBtn = document.getElementById('calAddTaskBtn');
+const tasksCountLabel = document.getElementById('tasksCountLabel');
+
+const WEEKDAY_SHORT = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+const MONTH_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const today = new Date();
+let calViewYear = today.getFullYear();
+let calViewMonth = today.getMonth(); // 0-indexed
+let calSelectedDate = toISODate(today);
+let allTasks = [];
+let tasksLoaded = false;
+
+function pad2(n){ return String(n).padStart(2, '0'); }
+function toISODate(d){ return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+
+async function loadTasks(){
+  try{
+    const res = await fetch('/api/tasks');
+    const data = await res.json();
+    allTasks = data.tasks || [];
+  }catch(err){
+    allTasks = [];
+  }
+  tasksLoaded = true;
+  updateTasksRing();
+  if(tasksCountLabel) tasksCountLabel.textContent = allTasks.length;
+}
+
+function updateTasksRing(){
+  const total = allTasks.length;
+  const done = allTasks.filter(t => t.done).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const sublabel = total ? `${done}/${total} done` : 'No tasks yet';
+  renderRing('ringTasks', pct, 'Tasks', sublabel);
+}
+
+function tasksForDate(dateStr){
+  return allTasks.filter(t => t.date === dateStr);
+}
+
+function renderCalendarGrid(){
+  calMonthLabel.textContent = `${MONTH_LONG[calViewMonth]} ${calViewYear}`;
+
+  const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
+  const startOffset = firstOfMonth.getDay();
+  const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(calViewYear, calViewMonth, 0).getDate();
+  const todayStr = toISODate(today);
+
+  calGrid.innerHTML = '';
+  for(let i = 0; i < 42; i++){
+    const dayNum = i - startOffset + 1;
+    let cellYear = calViewYear, cellMonth = calViewMonth, cellDay, otherMonth = false;
+
+    if(dayNum < 1){
+      cellDay = daysInPrevMonth + dayNum;
+      cellMonth = calViewMonth - 1;
+      if(cellMonth < 0){ cellMonth = 11; cellYear -= 1; }
+      otherMonth = true;
+    } else if(dayNum > daysInMonth){
+      cellDay = dayNum - daysInMonth;
+      cellMonth = calViewMonth + 1;
+      if(cellMonth > 11){ cellMonth = 0; cellYear += 1; }
+      otherMonth = true;
+    } else {
+      cellDay = dayNum;
+    }
+
+    const cellDate = new Date(cellYear, cellMonth, cellDay);
+    const cellStr = toISODate(cellDate);
+    const count = tasksForDate(cellStr).length;
+
+    const cell = document.createElement('div');
+    cell.className = 'cal-day' +
+      (otherMonth ? ' other-month' : '') +
+      (cellStr === todayStr ? ' today' : '') +
+      (cellStr === calSelectedDate ? ' selected' : '');
+    cell.innerHTML = `
+      <div class="cal-day-num">${cellDay}</div>
+      <div class="cal-day-dots">${'<span class="cal-day-dot"></span>'.repeat(Math.min(count, 3))}</div>
+    `;
+    cell.addEventListener('click', () => selectDay(cellStr));
+    calGrid.appendChild(cell);
+  }
+}
+
+function selectDay(dateStr){
+  calSelectedDate = dateStr;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  if(m - 1 !== calViewMonth || y !== calViewYear){
+    calViewYear = y;
+    calViewMonth = m - 1;
+  }
+  renderCalendarGrid();
+  renderDayPanel();
+}
+
+function renderDayPanel(){
+  const [y, m, d] = calSelectedDate.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  calSelectedLabel.textContent = dateObj.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+
+  const tasks = tasksForDate(calSelectedDate);
+  if(!tasks.length){
+    calTaskList.innerHTML = '<div class="cal-day-empty">No tasks yet for this day.</div>';
+    return;
+  }
+  calTaskList.innerHTML = '';
+  tasks.forEach(task => {
+    const item = document.createElement('div');
+    item.className = 'cal-task-item';
+    item.innerHTML = `
+      <div class="cal-task-check${task.done ? ' done' : ''}">${task.done ? '✓' : ''}</div>
+      <div class="cal-task-title${task.done ? ' done' : ''}">${escapeHtml(task.title)}</div>
+      <button class="cal-task-delete" aria-label="Delete task">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+    `;
+    item.querySelector('.cal-task-check').addEventListener('click', () => toggleTask(task.id, !task.done));
+    item.querySelector('.cal-task-delete').addEventListener('click', () => deleteTask(task.id));
+    calTaskList.appendChild(item);
+  });
+}
+
+async function addTask(){
+  const title = calTaskInput.value.trim();
+  if(!title) return;
+  calAddTaskBtn.disabled = true;
+  try{
+    const res = await fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: calSelectedDate, title })
+    });
+    if(!res.ok) throw new Error('Save failed');
+    calTaskInput.value = '';
+    await loadTasks();
+    renderCalendarGrid();
+    renderDayPanel();
+  }catch(err){
+    alert('Could not save task. Is the server running?');
+  }
+  calAddTaskBtn.disabled = false;
+}
+
+async function toggleTask(id, done){
+  try{
+    await fetch(`/api/tasks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ done })
+    });
+    await loadTasks();
+    renderCalendarGrid();
+    renderDayPanel();
+  }catch(err){
+    alert('Could not update task. Is the server running?');
+  }
+}
+
+async function deleteTask(id){
+  try{
+    await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    await loadTasks();
+    renderCalendarGrid();
+    renderDayPanel();
+  }catch(err){
+    alert('Could not delete task. Is the server running?');
+  }
+}
+
+calAddTaskBtn.addEventListener('click', addTask);
+calTaskInput.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){ e.preventDefault(); addTask(); }
+});
+
+document.getElementById('calPrev').addEventListener('click', () => {
+  calViewMonth -= 1;
+  if(calViewMonth < 0){ calViewMonth = 11; calViewYear -= 1; }
+  renderCalendarGrid();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calViewMonth += 1;
+  if(calViewMonth > 11){ calViewMonth = 0; calViewYear += 1; }
+  renderCalendarGrid();
+});
+document.getElementById('calToday').addEventListener('click', () => {
+  calViewYear = today.getFullYear();
+  calViewMonth = today.getMonth();
+  selectDay(toISODate(today));
+});
+
+async function openCalendar(){
+  calBackdrop.classList.add('open');
+  document.body.classList.add('drawer-open');
+  if(!tasksLoaded) await loadTasks();
+  renderCalendarGrid();
+  renderDayPanel();
+}
+function closeCalendarModal(){
+  calBackdrop.classList.remove('open');
+  document.body.classList.remove('drawer-open');
+}
+document.getElementById('openCalendar').addEventListener('click', openCalendar);
+document.getElementById('closeCalendar').addEventListener('click', closeCalendarModal);
+calBackdrop.addEventListener('click', (e) => { if(e.target === calBackdrop) closeCalendarModal(); });
+
+loadTasks();
+
+/* ---------------------------------------------------------
    CHAT LOGIC
 --------------------------------------------------------- */
 composerInput.addEventListener('input', () => {
@@ -592,10 +1301,6 @@ composerInput.addEventListener('keydown', (e) => {
   }
 });
 sendBtn.addEventListener('click', sendMessage);
-
-function escapeHtml(str){
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
 
 // very small markdown-ish renderer (bold, line breaks, bullet lists)
 function renderMarkdown(text){
@@ -623,10 +1328,29 @@ function addMessage(role, content){
   const msg = document.createElement('div');
   msg.className = `msg ${role}`;
   const avatar = role === 'user' ? 'YOU' : 'PTE';
-  msg.innerHTML = `
-    <div class="avatar">${avatar}</div>
-    <div class="bubble">${renderMarkdown(content)}</div>
-  `;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = renderMarkdown(content);
+
+  const avatarEl = document.createElement('div');
+  avatarEl.className = 'avatar';
+  avatarEl.textContent = avatar;
+
+  msg.appendChild(avatarEl);
+  msg.appendChild(bubble);
+
+  if(role === 'assistant'){
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'save-btn';
+    saveBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Save to notebook';
+    saveBtn.addEventListener('click', () => saveReplyAsNote(content, saveBtn));
+    actions.appendChild(saveBtn);
+    bubble.appendChild(actions);
+  }
+
   chatScroll.appendChild(msg);
   chatScroll.scrollTop = chatScroll.scrollHeight;
   return msg;
