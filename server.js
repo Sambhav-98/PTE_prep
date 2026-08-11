@@ -96,7 +96,7 @@ function buildSystemPrompt() {
 
 Rules:
 - Ground every answer in the handbook content below. Do not invent facts, numbers, or templates that aren't in it.
-- If the answer isn't covered in the handbook, say so plainly and suggest the closest related section instead of guessing.
+- If the answer isn't covered in the handbook, use the referenced document if available.
 - Be concise, practical, and exam-focused — this is for a student actively preparing for the PTE Academic test.
 - When helpful, format with short paragraphs or bullet points (use "- " for bullets, "**text**" for bold). Don't use headers.
 - When you draw from a specific section, you can mention its name naturally (e.g. "As covered in Read Aloud...").
@@ -147,7 +147,7 @@ app.post('/api/chat', async (req, res) => {
       const matches = reference.searchChunks(lastUserMessage.content, referenceChunks, 3);
       if (matches.length) {
         referencePagesUsed = matches.map(m => m.page);
-        const excerpt = reference.buildExcerptBlock(matches, 5000);
+        const excerpt = reference.buildExcerptBlock(matches, 15000);
         systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: You can either paraphrase it in your own words or quote it if necessary, refer to it generically as "your reference material" (not by title or publisher). Priority can be increased to this file, if answer for prompt requires more explanatory materials.`;
       }
     }
