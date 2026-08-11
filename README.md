@@ -11,6 +11,27 @@ Three panels, like NotebookLM, plus a calendar:
   - **Notebook** — save any chat reply with one click, or write your own notes. Everything persists on the server.
 - **Calendar** (opens from the top bar, on any screen size) — a month view where students can add tasks to specific days, check them off, and delete them. Task counts show as dots on each day; completion feeds the Dashboard's "Tasks" ring.
 
+## Optional: your own personal reference material
+
+You can point the app at a PDF you personally own (e.g. a practice-test book) for extra context, **without ever copying that file into this project**.
+
+Setup:
+1. Keep the PDF wherever you like on your own machine or server — it does *not* need to be inside this project folder. (If you do put it in a `reference/` folder here for convenience, it's already gitignored, along with any `*.pdf`.)
+2. In `.env`, set `REFERENCE_PDF_PATH` to its absolute path, e.g.:
+   ```
+   REFERENCE_PDF_PATH=/Users/you/Documents/pte-practice-tests-plus.pdf
+   ```
+3. Restart the server. The Sources panel will show "Personal Reference — Connected · N pages · local only" once it's loaded.
+
+**How it stays lightweight and copyright-safe by design:**
+- The PDF is read directly from the path you give it — never copied into this project, never committed to git, never uploaded anywhere.
+- `reference.js` parses it into memory only (a few seconds at startup) and builds a small keyword-search index. Nothing extracted from it is written to disk.
+- On each chat message, the server does a keyword search over that index and pulls back at most 2–3 short excerpts, **hard-capped at 900 characters total** (roughly a paragraph or two) — never the full document, and never even a full page.
+- The system prompt explicitly instructs the model to paraphrase those excerpts rather than quote them at length, and to refer to it generically as "your reference material."
+- If `REFERENCE_PDF_PATH` is unset, missing, or fails to parse, the app just runs without it — nothing breaks.
+
+This is meant for supplementary, on-demand context from something you already own, not for turning the app into a way to read the whole book through chat.
+
 ## Setup
 
 1. Install dependencies:
@@ -28,7 +49,9 @@ Three panels, like NotebookLM, plus a calendar:
    OPENAI_API_KEY=sk-your-real-key-here
    OPENAI_MODEL=gpt-4o-mini
    PORT=3000
+   REFERENCE_PDF_PATH=
    ```
+   (Leave `REFERENCE_PDF_PATH` blank unless you're using the optional personal reference feature described below.)
 
 4. Start the server:
    ```bash
@@ -44,6 +67,7 @@ pte-prep-hub/
 ├── server.js         Express server — loads .env, calls OpenAI, serves the frontend, exposes the API
 ├── knowledge.js       The handbook content, split into named sections
 ├── roadmap.js          The step-by-step study plan (phases + steps + "why it matters")
+├── reference.js          On-demand PDF excerpt search (parses, chunks, keyword-searches, caps output — see below)
 ├── storage.js           Tiny JSON-file read/write helpers for notes, roadmap progress, and tasks
 ├── index.html             Frontend (Sources / Chat / Studio: Dashboard, Roadmap, Notebook / Calendar modal)
 ├── data/                    Created automatically at runtime — notes.json, progress.json, tasks.json (gitignored)
@@ -69,6 +93,7 @@ Note: the server only exposes `index.html` itself over HTTP (via `GET /`) — it
   - `POST /api/tasks` — creates a task (`{ date: "YYYY-MM-DD", title }`)
   - `PUT /api/tasks/:id` — updates a task (`{ done }` and/or `{ title }` and/or `{ date }`)
   - `DELETE /api/tasks/:id` — deletes a task
+  - `GET /api/reference-status` — reports whether a personal reference PDF is loaded, and its page count (never its path, filename, or content)
 - `server.js` builds a system prompt from `knowledge.js` on every chat request and sends it to OpenAI's Chat Completions API using the key from `.env`.
 - Because the key stays server-side, this is safe to deploy publicly (e.g. Render, Railway, Fly.io, a VPS) without exposing your OpenAI key to visitors.
 - Notes and roadmap progress are stored in flat JSON files under `data/` via `storage.js`, and are shared by anyone using the deployed app (there's no login system — this is built for one student's own instance, not multi-tenant use).

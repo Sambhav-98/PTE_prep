@@ -1,15 +1,25 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const { SOURCES } = require('./knowledge');
 const { ROADMAP } = require('./roadmap');
 const storage = require('./storage');
+const reference = require('./reference');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const REFERENCE_PDF_PATH = process.env.REFERENCE_PDF_PATH;
+
+// Holds the parsed reference index in memory once loaded. Stays null if no
+// REFERENCE_PDF_PATH is set, or if the file can't be found/parsed — the app
+// works fine without it either way.
+let referenceChunks = [];
+let referencePageCount = 0;
+let referenceReady = false;
 
 app.use(express.json());
 
@@ -18,6 +28,33 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+/**
+ * Loads a personal reference PDF, if configured. The PDF itself is never
+ * copied anywhere else, and the text extracted from it is kept only in
+ * this running process's memory — nothing derived from it is written to
+ * disk. Re-parsing on each start takes a few seconds even for a 200+ page
+ * file, which is a fine trade-off for keeping zero persisted copies around.
+ * If nothing is configured, this silently no-ops and the app runs exactly
+ * as it did before.
+ */
+async function initReference() {
+  if (!REFERENCE_PDF_PATH) return;
+  if (!fs.existsSync(REFERENCE_PDF_PATH)) {
+    console.log(`Reference material: REFERENCE_PDF_PATH is set but no file was found at ${REFERENCE_PDF_PATH}`);
+    return;
+  }
+  try {
+    console.log('Reference material: parsing PDF (this happens in memory only, each time the server starts)...');
+    const pages = await reference.parsePdfPages(REFERENCE_PDF_PATH);
+    referenceChunks = reference.buildChunks(pages);
+    referencePageCount = pages.length;
+    referenceReady = true;
+    console.log(`Reference material: ready — ${pages.length} pages indexed in memory.`);
+  } catch (err) {
+    console.log(`Reference material: failed to load — ${err.message}`);
+  }
+}
 
 function buildSystemPrompt() {
   const kb = SOURCES.map(s => `## ${s.title}\n${s.content.trim()}`).join('\n\n');
@@ -45,6 +82,12 @@ app.get('/api/sources', (req, res) => {
   res.json(SOURCES.map(s => ({ title: s.title })));
 });
 
+// Lets the frontend show whether a personal reference PDF is connected,
+// without exposing its path, filename, or any of its content.
+app.get('/api/reference-status', (req, res) => {
+  res.json({ available: referenceReady, pages: referencePageCount });
+});
+
 app.post('/api/chat', async (req, res) => {
   if (!OPENAI_API_KEY) {
     return res.status(500).json({
@@ -57,6 +100,23 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Request body must include a "messages" array.' });
   }
 
+  let systemContent = buildSystemPrompt();
+
+  // If a personal reference PDF is loaded, pull a couple of short, capped
+  // excerpts relevant to the student's latest message — never the whole
+  // document. This keeps the reference material as light supporting
+  // context rather than something that gets bulk-reproduced.
+  if (referenceReady && referenceChunks.length) {
+    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    if (lastUserMessage && lastUserMessage.content) {
+      const matches = reference.searchChunks(lastUserMessage.content, referenceChunks, 3);
+      if (matches.length) {
+        const excerpt = reference.buildExcerptBlock(matches, 900);
+        systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: paraphrase it in your own words rather than quoting it at length, refer to it generically as "your reference material" (not by title or publisher), and never reproduce more of it than what's shown above.`;
+      }
+    }
+  }
+
   try {
     const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -66,8 +126,8 @@ app.post('/api/chat', async (req, res) => {
       },
       body: JSON.stringify({
         model: MODEL,
-        messages: [{ role: 'system', content: buildSystemPrompt() }, ...messages],
-        temperature: 1
+        messages: [{ role: 'system', content: systemContent }, ...messages],
+        temperature: 0.3
       })
     });
 
@@ -224,4 +284,5 @@ app.delete('/api/tasks/:id', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`PTE Prep Hub running at http://localhost:${PORT}`);
   console.log(OPENAI_API_KEY ? `OpenAI key loaded. Using model: ${MODEL}` : 'WARNING: No OPENAI_API_KEY found in .env');
+  initReference();
 });

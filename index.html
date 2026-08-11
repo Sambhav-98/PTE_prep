@@ -597,6 +597,10 @@
       <div class="doc-name">📘 PTE Academic Handbook</div>
       <div class="doc-meta">Ultimate Language Academy · 14 sections</div>
     </div>
+    <div class="source-doc" id="referenceDocCard">
+      <div class="doc-name">📗 Personal Reference</div>
+      <div class="doc-meta" id="referenceDocMeta">Checking…</div>
+    </div>
     <div class="panel-title" style="margin-top:18px;">Sections</div>
     <ul class="source-list" id="sourceList"></ul>
   </div>
@@ -857,10 +861,25 @@ async function checkHealth(){
   }
 }
 
+async function checkReferenceStatus(){
+  const metaEl = document.getElementById('referenceDocMeta');
+  if(!metaEl) return;
+  try{
+    const res = await fetch('/api/reference-status');
+    const data = await res.json();
+    metaEl.textContent = data.available
+      ? `Connected · ${data.pages} pages · local only`
+      : 'Not connected — see README';
+  }catch(err){
+    metaEl.textContent = 'Not connected — see README';
+  }
+}
+
 initChips();
 initQuickQuestions();
 loadSources();
 checkHealth();
+checkReferenceStatus();
 
 /* ---------------------------------------------------------
    ROADMAP
