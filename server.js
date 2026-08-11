@@ -148,7 +148,7 @@ app.post('/api/chat', async (req, res) => {
       if (matches.length) {
         referencePagesUsed = matches.map(m => m.page);
         const excerpt = reference.buildExcerptBlock(matches, 5000);
-        systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: paraphrase it in your own words rather than quoting it at length, refer to it generically as "your reference material" (not by title or publisher), and never reproduce more of it than what's shown above.`;
+        systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: You can either paraphrase it in your own words or quote it if necessary, refer to it generically as "your reference material" (not by title or publisher). Priority can be increased to this file, if answer for prompt requires more explanatory materials.`;
       }
     }
   }
