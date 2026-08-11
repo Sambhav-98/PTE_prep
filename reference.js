@@ -132,20 +132,28 @@ function buildChunks(pages) {
   return chunks;
 }
 
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Very small keyword-overlap search — no external services, no embeddings.
+ * Matches on whole words only (not raw substrings), since a spurious
+ * partial-word hit would otherwise surface as a visible "Personal
+ * reference" citation in the UI even when it's not actually relevant.
  * Returns the top few chunks that share the most distinct query terms.
  */
 function searchChunks(query, chunks, topK = 3) {
   const queryTerms = extractQueryTerms(query);
   if (!queryTerms.length || !chunks.length) return [];
 
+  const termRegexes = queryTerms.map(term => new RegExp(`\\b${escapeRegExp(term)}\\b`, 'i'));
+
   const scored = chunks
     .map(c => {
-      const lower = c.text.toLowerCase();
       let score = 0;
-      for (const term of queryTerms) {
-        if (lower.includes(term)) score += 1;
+      for (const re of termRegexes) {
+        if (re.test(c.text)) score += 1;
       }
       return { ...c, score };
     })
