@@ -161,7 +161,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [{ role: 'system', content: systemContent }, ...messages],
-        temperature: 0.3
+        temperature: 1
       })
     });
 
