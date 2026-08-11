@@ -42,7 +42,7 @@ Works on free hosting tiers (including Render's free plan) because nothing needs
 
 If both env vars are set, `REFERENCE_PDF_PATH` takes priority; Google Drive is only tried if no local file is found.
 
-Either way, once loaded, the Sources panel shows "Personal Reference — Connected · N pages · local file" or "· Google Drive".
+Either way, once loaded, the Sources panel shows "Personal Reference — Connected · N pages · local file" or "· Google Drive". When a chat answer draws on it, a small "Personal reference · p. N" badge appears under that reply in the chat — so it's always visible when (and which pages) your own material contributed, rather than blending in silently with the handbook content.
 
 **How it stays lightweight and copyright-safe by design, regardless of which option you use:**
 - The PDF is never copied into this project, never committed to git, never uploaded anywhere by the app itself.
@@ -102,7 +102,7 @@ Note: the server only exposes `index.html` itself over HTTP (via `GET /`) — it
 ## How it works
 
 - The frontend never talks to OpenAI directly. It calls local endpoints only:
-  - `POST /api/chat` — sends the conversation, gets back a grounded reply
+  - `POST /api/chat` — sends the conversation, gets back `{ reply, reference }`, where `reference` is `null` unless your personal reference material contributed relevant excerpts to that specific answer, in which case it's `{ pages: [...] }`
   - `GET /api/health` — reports whether a server-side key is configured (no key value is ever returned)
   - `GET /api/sources` — returns just the section titles for the left panel
   - `GET /api/roadmap` — returns the study plan with each step's current done/not-done state
