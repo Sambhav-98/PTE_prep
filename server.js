@@ -32,15 +32,6 @@ app.get('/', (req, res) => {
 });
 
 /**
- * Loads a personal reference PDF, if configured. The PDF itself is never
- * copied anywhere else, and the text extracted from it is kept only in
- * this running process's memory — nothing derived from it is written to
- * disk. Re-parsing on each start takes a few seconds even for a 200+ page
- * file, which is a fine trade-off for keeping zero persisted copies around.
- * If nothing is configured, this silently no-ops and the app runs exactly
- * as it did before.
- */
-/**
  * Loads a personal reference PDF, if configured. Two sources are supported,
  * tried in this order:
  *   1. REFERENCE_PDF_PATH — a local file. Best when the server has real
@@ -96,7 +87,7 @@ function buildSystemPrompt() {
 
 Rules:
 - Ground every answer in the handbook content below. Do not invent facts, numbers, or templates that aren't in it.
-- If the answer isn't covered in the handbook, use the referenced document if available.
+- If the answer isn't covered in the handbook, say so plainly and suggest the closest related section instead of guessing.
 - Be concise, practical, and exam-focused — this is for a student actively preparing for the PTE Academic test.
 - When helpful, format with short paragraphs or bullet points (use "- " for bullets, "**text**" for bold). Don't use headers.
 - When you draw from a specific section, you can mention its name naturally (e.g. "As covered in Read Aloud...").
@@ -110,6 +101,74 @@ ${kb}`;
 app.get('/api/health', (req, res) => {
   res.json({ connected: Boolean(OPENAI_API_KEY), model: MODEL });
 });
+
+/**
+ * Builds grounding material for flashcard/quiz generation: the full text
+ * of a chosen handbook section (falling back to the whole handbook if no
+ * section is picked), plus optional short reference excerpts — the same
+ * excerpt search and 700-character cap used by chat, so generated study
+ * material stays just as grounded and just as light on any personal
+ * reference content.
+ */
+function buildStudyContext(sectionTitle, topic, useReference) {
+  let contextText = '';
+  if (sectionTitle) {
+    const section = SOURCES.find(s => s.title === sectionTitle);
+    if (section) contextText = `## ${section.title}\n${section.content.trim()}`;
+  }
+  if (!contextText) {
+    contextText = SOURCES.map(s => `## ${s.title}\n${s.content.trim()}`).join('\n\n');
+  }
+
+  let refBlock = '';
+  const query = (topic || sectionTitle || '').trim();
+  if (useReference && referenceReady && referenceChunks.length && query) {
+    const matches = reference.searchChunks(query, referenceChunks, 2);
+    if (matches.length) refBlock = reference.buildExcerptBlock(matches, REFERENCE_EXCERPT_MAX_CHARS);
+  }
+
+  return { contextText, refBlock };
+}
+
+/**
+ * Calls OpenAI with a system+user prompt and parses the reply as JSON.
+ * Used by flashcard/quiz generation, which both need structured output
+ * rather than free-form chat text.
+ */
+async function generateStructuredContent(systemPrompt, userPrompt) {
+  const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENAI_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: 0.4
+    })
+  });
+
+  const data = await openaiRes.json();
+  if (!openaiRes.ok) {
+    const message = (data && data.error && data.error.message) || `OpenAI request failed (${openaiRes.status})`;
+    throw new Error(message);
+  }
+
+  const raw = data.choices?.[0]?.message?.content || '';
+  const cleaned = raw.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch (err) {
+    throw new Error('the model returned something that wasn\'t valid JSON — try generating again.');
+  }
+  return parsed;
+}
 
 // Exposes just the section titles for the Sources panel.
 app.get('/api/sources', (req, res) => {
@@ -147,8 +206,8 @@ app.post('/api/chat', async (req, res) => {
       const matches = reference.searchChunks(lastUserMessage.content, referenceChunks, 3);
       if (matches.length) {
         referencePagesUsed = matches.map(m => m.page);
-        const excerpt = reference.buildExcerptBlock(matches, 15000);
-        systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: You can either paraphrase it in your own words or quote it if necessary, refer to it generically as "your reference material" (not by title or publisher). Priority can be increased to this file, if answer for prompt requires more explanatory materials.`;
+        const excerpt = reference.buildExcerptBlock(matches, REFERENCE_EXCERPT_MAX_CHARS);
+        systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: paraphrase it in your own words rather than quoting it at length, refer to it generically as "your reference material" (not by title or publisher), and never reproduce more of it than what's shown above.`;
       }
     }
   }
@@ -163,7 +222,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         model: MODEL,
         messages: [{ role: 'system', content: systemContent }, ...messages],
-        temperature: 1
+        temperature: 0.3
       })
     });
 
@@ -181,6 +240,154 @@ app.post('/api/chat', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: `Server error contacting OpenAI: ${err.message}` });
+  }
+});
+
+// ---- Flashcards -------------------------------------------------------
+
+app.post('/api/flashcards/generate', async (req, res) => {
+  if (!OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'The server has no OPENAI_API_KEY configured. Add one to your .env file and restart the server.' });
+  }
+  const { sectionTitle, topic, useReference } = req.body || {};
+  if (!sectionTitle && !topic) {
+    return res.status(400).json({ error: 'Choose a section or enter a topic first.' });
+  }
+
+  const label = (topic && topic.trim()) || sectionTitle;
+  const { contextText, refBlock } = buildStudyContext(sectionTitle, topic, useReference);
+
+  const systemPrompt = `You create study flashcards for a PTE Academic student, grounded ONLY in the material below — never invent facts, numbers, or templates that aren't in it. Respond with ONLY a raw JSON array, no markdown code fences, no commentary before or after, in exactly this shape:
+[{"front": "short question or term (under 15 words)", "back": "concise direct answer (under 35 words)"}]
+Create between 6 and 10 cards focused on: ${label}
+
+MATERIAL:
+${contextText}${refBlock ? `\n\nADDITIONAL PERSONAL REFERENCE EXCERPTS (paraphrase these in your own words rather than quoting them):\n${refBlock}` : ''}`;
+
+  try {
+    const cards = await generateStructuredContent(systemPrompt, `Generate flashcards about: ${label}`);
+    if (!Array.isArray(cards) || !cards.length) {
+      return res.status(500).json({ error: 'The model returned no usable flashcards — try again.' });
+    }
+    res.json({ cards, topic: label });
+  } catch (err) {
+    res.status(500).json({ error: `Could not generate flashcards: ${err.message}` });
+  }
+});
+
+app.get('/api/flashcards', async (req, res) => {
+  try {
+    const decks = await storage.getFlashcardDecks();
+    res.json({ decks });
+  } catch (err) {
+    res.status(500).json({ error: `Could not load flashcard decks: ${err.message}` });
+  }
+});
+
+app.post('/api/flashcards', async (req, res) => {
+  const { topic, cards } = req.body || {};
+  if (!topic || !Array.isArray(cards) || !cards.length) {
+    return res.status(400).json({ error: 'topic and a non-empty cards array are required.' });
+  }
+  try {
+    const decks = await storage.getFlashcardDecks();
+    const deck = {
+      id: crypto.randomUUID(),
+      topic: String(topic).trim() || 'Untitled deck',
+      cards,
+      createdAt: new Date().toISOString()
+    };
+    decks.unshift(deck);
+    await storage.saveFlashcardDecks(decks);
+    res.json({ deck });
+  } catch (err) {
+    res.status(500).json({ error: `Could not save deck: ${err.message}` });
+  }
+});
+
+app.delete('/api/flashcards/:id', async (req, res) => {
+  try {
+    const decks = await storage.getFlashcardDecks();
+    const filtered = decks.filter(d => d.id !== req.params.id);
+    await storage.saveFlashcardDecks(filtered);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: `Could not delete deck: ${err.message}` });
+  }
+});
+
+// ---- Quiz ---------------------------------------------------------------
+
+app.post('/api/quiz/generate', async (req, res) => {
+  if (!OPENAI_API_KEY) {
+    return res.status(500).json({ error: 'The server has no OPENAI_API_KEY configured. Add one to your .env file and restart the server.' });
+  }
+  const { sectionTitle, topic, useReference, count } = req.body || {};
+  if (!sectionTitle && !topic) {
+    return res.status(400).json({ error: 'Choose a section or enter a topic first.' });
+  }
+  const n = [5, 8, 10].includes(Number(count)) ? Number(count) : 5;
+
+  const label = (topic && topic.trim()) || sectionTitle;
+  const { contextText, refBlock } = buildStudyContext(sectionTitle, topic, useReference);
+
+  const systemPrompt = `You create a multiple-choice quiz for a PTE Academic student, grounded ONLY in the material below — never invent facts, numbers, or templates that aren't in it. Respond with ONLY a raw JSON array, no markdown code fences, no commentary before or after, in exactly this shape:
+[{"question": "...", "options": ["...","...","...","..."], "answerIndex": 0, "explanation": "under 25 words"}]
+Create exactly ${n} questions focused on: ${label}. Each question needs exactly 4 options with only one correct answer. "answerIndex" is the 0-based index of the correct option.
+
+MATERIAL:
+${contextText}${refBlock ? `\n\nADDITIONAL PERSONAL REFERENCE EXCERPTS (paraphrase these in your own words rather than quoting them):\n${refBlock}` : ''}`;
+
+  try {
+    const questions = await generateStructuredContent(systemPrompt, `Generate a ${n}-question quiz about: ${label}`);
+    if (!Array.isArray(questions) || !questions.length) {
+      return res.status(500).json({ error: 'The model returned no usable questions — try again.' });
+    }
+    res.json({ questions, topic: label });
+  } catch (err) {
+    res.status(500).json({ error: `Could not generate quiz: ${err.message}` });
+  }
+});
+
+app.get('/api/quiz-history', async (req, res) => {
+  try {
+    const history = await storage.getQuizHistory();
+    res.json({ history });
+  } catch (err) {
+    res.status(500).json({ error: `Could not load quiz history: ${err.message}` });
+  }
+});
+
+app.post('/api/quiz-history', async (req, res) => {
+  const { topic, score, total } = req.body || {};
+  if (!topic || typeof score !== 'number' || typeof total !== 'number') {
+    return res.status(400).json({ error: 'topic, score, and total are required.' });
+  }
+  try {
+    const history = await storage.getQuizHistory();
+    const entry = {
+      id: crypto.randomUUID(),
+      topic: String(topic).trim() || 'Untitled quiz',
+      score,
+      total,
+      createdAt: new Date().toISOString()
+    };
+    history.unshift(entry);
+    await storage.saveQuizHistory(history);
+    res.json({ entry });
+  } catch (err) {
+    res.status(500).json({ error: `Could not save quiz result: ${err.message}` });
+  }
+});
+
+app.delete('/api/quiz-history/:id', async (req, res) => {
+  try {
+    const history = await storage.getQuizHistory();
+    const filtered = history.filter(h => h.id !== req.params.id);
+    await storage.saveQuizHistory(filtered);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: `Could not delete quiz result: ${err.message}` });
   }
 });
 

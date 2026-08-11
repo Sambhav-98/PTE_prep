@@ -494,6 +494,141 @@
   .cal-task-delete svg{width:12px;height:12px;}
   .cal-day-empty{font-size:12px;color:var(--muted);padding:6px 0;}
 
+  /* PRACTICE MODAL (Flashcards + Quiz) */
+  .pmodal-tabs{
+    display:flex;gap:4px;margin:0 18px;padding:3px;flex-shrink:0;
+    background:var(--paper);border:1px solid var(--line);border-radius:10px;
+  }
+  .pmodal-tab{
+    flex:1;border:none;background:transparent;padding:8px 4px;border-radius:7px;
+    font-size:12px;font-family:'IBM Plex Mono',monospace;text-transform:uppercase;
+    letter-spacing:.02em;color:var(--muted);cursor:pointer;
+  }
+  .pmodal-tab.active{background:var(--paper-raised);color:var(--ink);box-shadow:var(--shadow);font-weight:600;}
+  .pmodal-tab-content{display:none;}
+  .pmodal-tab-content.active{display:block;}
+  .practice-body{flex:1;overflow-y:auto;padding:16px 18px 20px;}
+
+  .practice-controls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .practice-controls select, .practice-controls input[type="text"]{
+    flex:1;min-width:160px;border:1px solid var(--line);border-radius:8px;padding:9px 10px;
+    font-family:inherit;font-size:13px;background:var(--paper-raised);color:var(--ink);outline:none;
+  }
+  .practice-controls select:focus, .practice-controls input:focus{border-color:var(--accent-gold);}
+  #qzCount{flex:0 1 120px;min-width:110px;}
+  .ref-toggle{
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);
+    flex-basis:100%;
+  }
+  .ref-toggle input{width:14px;height:14px;}
+  .practice-generate-btn{
+    flex-basis:100%;padding:10px;border-radius:8px;border:none;background:var(--ink);color:#fff;
+    font-size:13px;font-weight:500;cursor:pointer;
+  }
+  .practice-generate-btn:hover{background:#2c3a63;}
+  .practice-generate-btn:disabled{background:#B7B2A4;cursor:not-allowed;}
+  .practice-empty{
+    font-size:12.5px;color:var(--muted);text-align:center;padding:36px 16px;
+    border:1px dashed var(--line);border-radius:10px;
+  }
+  .practice-error{
+    font-size:12.5px;color:var(--accent-red);text-align:center;padding:16px;
+    border:1px solid rgba(176,67,42,0.3);background:rgba(176,67,42,0.06);border-radius:10px;
+  }
+  .practice-loading{
+    font-size:12.5px;color:var(--muted);text-align:center;padding:36px 16px;
+    display:flex;flex-direction:column;align-items:center;gap:10px;
+  }
+
+  /* Flashcard flip viewer */
+  .flashcard{perspective:1200px;height:170px;margin-bottom:14px;cursor:pointer;}
+  .flashcard-inner{
+    position:relative;width:100%;height:100%;transition:transform .5s;
+    transform-style:preserve-3d;
+  }
+  .flashcard.flipped .flashcard-inner{transform:rotateY(180deg);}
+  .flashcard-face{
+    position:absolute;inset:0;backface-visibility:hidden;
+    border:1px solid var(--line);border-radius:14px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:20px;font-size:14.5px;line-height:1.5;background:var(--paper-raised);
+    box-shadow:var(--shadow);
+  }
+  .flashcard-face .fc-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;
+    letter-spacing:.05em;color:var(--muted);margin-bottom:10px;
+  }
+  .flashcard-back{transform:rotateY(180deg);background:var(--ink);color:#fff;}
+  .flashcard-back .fc-tag{color:rgba(255,255,255,0.6);}
+  .flashcard-hint{text-align:center;font-size:10.5px;color:var(--muted);margin:-6px 0 14px;}
+  .flashcard-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+  .flashcard-nav button{
+    padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--paper-raised);
+    font-size:12.5px;cursor:pointer;color:var(--ink);
+  }
+  .flashcard-nav button:hover{border-color:var(--accent-gold);}
+  .flashcard-nav button:disabled{opacity:0.4;cursor:not-allowed;}
+  .flashcard-counter{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);}
+  .deck-save-btn{
+    width:100%;padding:9px;border-radius:8px;border:1px solid var(--accent-teal);
+    background:rgba(47,123,109,0.08);color:var(--accent-teal);font-size:12.5px;font-weight:500;
+    cursor:pointer;margin-bottom:6px;
+  }
+  .deck-save-btn:hover{background:rgba(47,123,109,0.15);}
+  .deck-save-btn.saved{cursor:default;opacity:0.7;}
+
+  .deck-item, .quiz-history-item{
+    display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:9px;
+    padding:9px 10px;margin-bottom:7px;background:var(--paper);cursor:pointer;
+  }
+  .deck-item:hover, .quiz-history-item:hover{border-color:var(--accent-gold);}
+  .deck-item-info, .quiz-history-info{flex:1;min-width:0;}
+  .deck-item-title, .quiz-history-title{font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .deck-item-meta, .quiz-history-meta{font-size:10.5px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;}
+  .item-delete{background:none;border:none;color:var(--muted);cursor:pointer;padding:4px;flex-shrink:0;}
+  .item-delete:hover{color:var(--accent-red);}
+  .item-delete svg{width:13px;height:13px;}
+  .quiz-score-badge{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    padding:3px 8px;border-radius:6px;flex-shrink:0;
+  }
+  .quiz-score-badge.good{background:rgba(47,123,109,0.12);color:var(--accent-teal);}
+  .quiz-score-badge.mid{background:rgba(201,142,30,0.15);color:var(--accent-gold);}
+  .quiz-score-badge.low{background:rgba(176,67,42,0.1);color:var(--accent-red);}
+
+  /* Quiz runner */
+  .quiz-progress{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:10px;}
+  .quiz-question{font-size:14.5px;font-weight:500;margin-bottom:14px;line-height:1.5;}
+  .quiz-option{
+    display:block;width:100%;text-align:left;padding:11px 14px;margin-bottom:8px;
+    border:1px solid var(--line);border-radius:9px;background:var(--paper-raised);
+    font-size:13px;cursor:pointer;color:var(--ink);transition:border-color .12s ease;
+  }
+  .quiz-option:hover{border-color:var(--accent-gold);}
+  .quiz-option.correct{border-color:var(--accent-teal);background:rgba(47,123,109,0.1);font-weight:500;}
+  .quiz-option.incorrect{border-color:var(--accent-red);background:rgba(176,67,42,0.08);}
+  .quiz-option:disabled{cursor:default;}
+  .quiz-explanation{
+    font-size:12px;color:var(--muted);background:var(--paper);border:1px solid var(--line);
+    border-radius:9px;padding:10px 12px;margin:10px 0 14px;line-height:1.5;
+  }
+  .quiz-next-btn{
+    width:100%;padding:10px;border-radius:8px;border:none;background:var(--ink);color:#fff;
+    font-size:13px;font-weight:500;cursor:pointer;
+  }
+  .quiz-next-btn:hover{background:#2c3a63;}
+  .quiz-result{text-align:center;padding:20px 10px;}
+  .quiz-result .score-big{
+    font-family:'Source Serif 4',serif;font-weight:700;font-size:34px;margin-bottom:4px;
+  }
+  .quiz-result .score-label{font-size:12.5px;color:var(--muted);margin-bottom:18px;}
+  .quiz-result-actions{display:flex;gap:8px;}
+  .quiz-result-actions button{
+    flex:1;padding:9px;border-radius:8px;font-size:12.5px;cursor:pointer;
+  }
+  .quiz-save-result-btn{border:1px solid var(--accent-teal);background:rgba(47,123,109,0.08);color:var(--accent-teal);}
+  .quiz-retry-btn{border:1px solid var(--line);background:var(--paper-raised);color:var(--ink);}
+
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:#D8D4C8;border-radius:8px;}
 
@@ -550,12 +685,14 @@
     textarea#composerInput{font-size:16px;}
     .notebook-add input, .notebook-add textarea{font-size:16px;}
     .cal-task-add input{font-size:16px;}
+    .practice-controls select, .practice-controls input[type="text"]{font-size:16px;}
 
     .cal-backdrop{padding:0;}
     .cal-modal{width:100%;height:100%;max-height:100dvh;border-radius:0;}
     .cal-body{flex-direction:column;}
     .cal-day-panel{border-left:none;border-top:1px solid var(--line);min-width:0;}
     .ring-card svg{width:64px;height:64px;}
+    .flashcard{height:200px;}
   }
 
   @media (max-width:420px){
@@ -583,6 +720,9 @@
       </div>
       <button class="icon-btn always-visible" id="openCalendar" aria-label="Open calendar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      </button>
+      <button class="icon-btn always-visible" id="openPractice" aria-label="Open practice: flashcards and quiz">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="12" height="12" rx="2"/><path d="M9 21h9a2 2 0 0 0 2-2V9"/></svg>
       </button>
       <button class="icon-btn" id="openStudio" aria-label="Open studio">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="14" y1="4" x2="14" y2="20"/></svg>
@@ -723,6 +863,65 @@
   </div>
 </div>
 
+<div class="cal-backdrop" id="practiceBackdrop">
+  <div class="cal-modal">
+    <div class="cal-modal-header">
+      <h2>Practice</h2>
+      <button class="icon-btn always-visible" id="closePractice" aria-label="Close practice">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+    </div>
+    <div class="pmodal-tabs">
+      <button class="pmodal-tab active" data-ptab="flashcards">Flashcards</button>
+      <button class="pmodal-tab" data-ptab="quiz">Quiz</button>
+    </div>
+    <div class="practice-body">
+
+      <div class="pmodal-tab-content active" data-ptab-content="flashcards">
+        <div class="practice-controls">
+          <select id="fcSectionSelect"></select>
+          <input type="text" id="fcCustomTopic" placeholder="or type your own topic…" style="display:none;">
+          <label class="ref-toggle" id="fcRefToggleWrap" style="display:none;">
+            <input type="checkbox" id="fcUseReference"> Include personal reference
+          </label>
+          <button class="practice-generate-btn" id="fcGenerateBtn">Generate flashcards</button>
+        </div>
+
+        <div id="flashcardArea">
+          <div class="practice-empty">Choose a section (or type a topic), then generate a set to begin.</div>
+        </div>
+
+        <div class="panel-title" style="margin-top:18px;">My saved decks</div>
+        <div id="deckList"></div>
+      </div>
+
+      <div class="pmodal-tab-content" data-ptab-content="quiz">
+        <div class="practice-controls">
+          <select id="qzSectionSelect"></select>
+          <input type="text" id="qzCustomTopic" placeholder="or type your own topic…" style="display:none;">
+          <select id="qzCount">
+            <option value="5">5 questions</option>
+            <option value="8">8 questions</option>
+            <option value="10">10 questions</option>
+          </select>
+          <label class="ref-toggle" id="qzRefToggleWrap" style="display:none;">
+            <input type="checkbox" id="qzUseReference"> Include personal reference
+          </label>
+          <button class="practice-generate-btn" id="qzGenerateBtn">Generate quiz</button>
+        </div>
+
+        <div id="quizArea">
+          <div class="practice-empty">Choose a section (or type a topic), then generate a quiz to begin.</div>
+        </div>
+
+        <div class="panel-title" style="margin-top:18px;">Past attempts</div>
+        <div id="quizHistoryList"></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script>
 const SUGGESTED = [
   "How is the Speaking score calculated?",
@@ -734,6 +933,7 @@ const SUGGESTED = [
 ];
 
 let messages = []; // {role, content}
+let referenceAvailable = false;
 let savedNoteContents = new Set(); // dedupe guard for "save reply" buttons
 
 const chatScroll = document.getElementById('chatScroll');
@@ -829,10 +1029,13 @@ function initQuickQuestions(){
   });
 }
 
+let sourceTitles = [];
+
 async function loadSources(){
   try{
     const res = await fetch('/api/sources');
     const list = await res.json();
+    sourceTitles = list.map(s => s.title);
     list.forEach(s => {
       const li = document.createElement('li');
       li.innerHTML = `<span class="dot"></span>${s.title}`;
@@ -845,6 +1048,7 @@ async function loadSources(){
       };
       sourceList.appendChild(li);
     });
+    populateSectionSelects();
   }catch(err){
     // Sources panel is non-critical; fail silently if the server isn't reachable yet.
   }
@@ -870,10 +1074,17 @@ async function checkHealth(){
 
 async function checkReferenceStatus(){
   const metaEl = document.getElementById('referenceDocMeta');
-  if(!metaEl) return;
   try{
     const res = await fetch('/api/reference-status');
     const data = await res.json();
+    referenceAvailable = Boolean(data.available);
+
+    ['fcRefToggleWrap', 'qzRefToggleWrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = referenceAvailable ? 'flex' : 'none';
+    });
+
+    if(!metaEl) return;
     if(!data.available){
       metaEl.textContent = 'Not connected — see README';
       return;
@@ -881,7 +1092,7 @@ async function checkReferenceStatus(){
     const sourceLabel = data.source === 'gdrive' ? 'Google Drive' : 'local file';
     metaEl.textContent = `Connected · ${data.pages} pages · ${sourceLabel}`;
   }catch(err){
-    metaEl.textContent = 'Not connected — see README';
+    if(metaEl) metaEl.textContent = 'Not connected — see README';
   }
 }
 
@@ -1315,6 +1526,391 @@ document.getElementById('closeCalendar').addEventListener('click', closeCalendar
 calBackdrop.addEventListener('click', (e) => { if(e.target === calBackdrop) closeCalendarModal(); });
 
 loadTasks();
+
+/* ---------------------------------------------------------
+   PRACTICE — shared setup (Flashcards + Quiz)
+--------------------------------------------------------- */
+const practiceBackdrop = document.getElementById('practiceBackdrop');
+
+function populateSectionSelects(){
+  [document.getElementById('fcSectionSelect'), document.getElementById('qzSectionSelect')].forEach(sel => {
+    if(!sel || sel.dataset.populated) return;
+    sel.innerHTML = '<option value="">Choose a section…</option>';
+    sourceTitles.forEach(title => {
+      const opt = document.createElement('option');
+      opt.value = title;
+      opt.textContent = title;
+      sel.appendChild(opt);
+    });
+    const customOpt = document.createElement('option');
+    customOpt.value = '__custom__';
+    customOpt.textContent = 'Custom topic…';
+    sel.appendChild(customOpt);
+    sel.dataset.populated = '1';
+  });
+}
+
+function wireCustomTopicToggle(selectId, inputId){
+  const sel = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  sel.addEventListener('change', () => {
+    input.style.display = sel.value === '__custom__' ? 'block' : 'none';
+    if(sel.value !== '__custom__') input.value = '';
+  });
+}
+wireCustomTopicToggle('fcSectionSelect', 'fcCustomTopic');
+wireCustomTopicToggle('qzSectionSelect', 'qzCustomTopic');
+
+function readTopicSelection(selectId, inputId){
+  const sel = document.getElementById(selectId);
+  const input = document.getElementById(inputId);
+  if(sel.value === '__custom__'){
+    return { sectionTitle: null, topic: input.value.trim() };
+  }
+  return { sectionTitle: sel.value || null, topic: null };
+}
+
+function openPractice(){
+  practiceBackdrop.classList.add('open');
+  document.body.classList.add('drawer-open');
+  loadDecks();
+  loadQuizHistory();
+}
+function closePractice(){
+  practiceBackdrop.classList.remove('open');
+  document.body.classList.remove('drawer-open');
+}
+document.getElementById('openPractice').addEventListener('click', openPractice);
+document.getElementById('closePractice').addEventListener('click', closePractice);
+practiceBackdrop.addEventListener('click', (e) => { if(e.target === practiceBackdrop) closePractice(); });
+
+document.querySelectorAll('.pmodal-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pmodal-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.pmodal-tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelector(`.pmodal-tab-content[data-ptab-content="${btn.dataset.ptab}"]`).classList.add('active');
+  });
+});
+
+/* ---------------------------------------------------------
+   FLASHCARDS
+--------------------------------------------------------- */
+const flashcardArea = document.getElementById('flashcardArea');
+const deckList = document.getElementById('deckList');
+let fcState = { cards: [], topic: '', index: 0, deckId: null };
+
+document.getElementById('fcGenerateBtn').addEventListener('click', async () => {
+  const { sectionTitle, topic } = readTopicSelection('fcSectionSelect', 'fcCustomTopic');
+  if(!sectionTitle && !topic){
+    flashcardArea.innerHTML = '<div class="practice-error">Choose a section or type a topic first.</div>';
+    return;
+  }
+  const useReference = document.getElementById('fcUseReference').checked;
+  const btn = document.getElementById('fcGenerateBtn');
+  btn.disabled = true;
+  flashcardArea.innerHTML = '<div class="practice-loading"><div class="thinking"><span></span><span></span><span></span></div>Generating flashcards…</div>';
+
+  try{
+    const res = await fetch('/api/flashcards/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sectionTitle, topic, useReference })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      flashcardArea.innerHTML = `<div class="practice-error">${escapeHtml(data.error || 'Could not generate flashcards.')}</div>`;
+      btn.disabled = false;
+      return;
+    }
+    fcState = { cards: data.cards, topic: data.topic, index: 0, deckId: null };
+    renderFlashcardViewer();
+  }catch(err){
+    flashcardArea.innerHTML = `<div class="practice-error">Connection error: ${escapeHtml(err.message)}</div>`;
+  }
+  btn.disabled = false;
+});
+
+function renderFlashcardViewer(){
+  if(!fcState.cards.length){
+    flashcardArea.innerHTML = '<div class="practice-empty">Choose a section (or type a topic), then generate a set to begin.</div>';
+    return;
+  }
+  const card = fcState.cards[fcState.index];
+  flashcardArea.innerHTML = `
+    <div class="flashcard" id="flashcardEl">
+      <div class="flashcard-inner">
+        <div class="flashcard-face flashcard-front">
+          <div class="fc-tag">${escapeHtml(fcState.topic)}</div>
+          <div>${escapeHtml(card.front)}</div>
+        </div>
+        <div class="flashcard-face flashcard-back">
+          <div class="fc-tag">Answer</div>
+          <div>${escapeHtml(card.back)}</div>
+        </div>
+      </div>
+    </div>
+    <div class="flashcard-hint">Tap the card to flip it</div>
+    <div class="flashcard-nav">
+      <button id="fcPrevBtn" ${fcState.index === 0 ? 'disabled' : ''}>‹ Prev</button>
+      <span class="flashcard-counter">${fcState.index + 1} / ${fcState.cards.length}</span>
+      <button id="fcNextBtn" ${fcState.index === fcState.cards.length - 1 ? 'disabled' : ''}>Next ›</button>
+    </div>
+    <button class="deck-save-btn" id="fcSaveDeckBtn">${fcState.deckId ? '✓ Saved to My decks' : '💾 Save this deck'}</button>
+  `;
+  document.getElementById('flashcardEl').addEventListener('click', (e) => {
+    e.currentTarget.classList.toggle('flipped');
+  });
+  document.getElementById('fcPrevBtn').addEventListener('click', () => {
+    if(fcState.index > 0){ fcState.index--; renderFlashcardViewer(); }
+  });
+  document.getElementById('fcNextBtn').addEventListener('click', () => {
+    if(fcState.index < fcState.cards.length - 1){ fcState.index++; renderFlashcardViewer(); }
+  });
+  const saveBtn = document.getElementById('fcSaveDeckBtn');
+  if(fcState.deckId){
+    saveBtn.classList.add('saved');
+  } else {
+    saveBtn.addEventListener('click', saveCurrentDeck);
+  }
+}
+
+async function saveCurrentDeck(){
+  const btn = document.getElementById('fcSaveDeckBtn');
+  btn.disabled = true;
+  try{
+    const res = await fetch('/api/flashcards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: fcState.topic, cards: fcState.cards })
+    });
+    const data = await res.json();
+    if(res.ok){
+      fcState.deckId = data.deck.id;
+      renderFlashcardViewer();
+      loadDecks();
+    }
+  }catch(err){
+    alert('Could not save deck. Is the server running?');
+  }
+  btn.disabled = false;
+}
+
+async function loadDecks(){
+  try{
+    const res = await fetch('/api/flashcards');
+    const data = await res.json();
+    renderDeckList(data.decks || []);
+  }catch(err){
+    deckList.innerHTML = '';
+  }
+}
+
+function renderDeckList(decks){
+  if(!decks.length){
+    deckList.innerHTML = '<div class="practice-empty">No saved decks yet.</div>';
+    return;
+  }
+  deckList.innerHTML = '';
+  decks.forEach(deck => {
+    const item = document.createElement('div');
+    item.className = 'deck-item';
+    item.innerHTML = `
+      <div class="deck-item-info">
+        <div class="deck-item-title">${escapeHtml(deck.topic)}</div>
+        <div class="deck-item-meta">${deck.cards.length} cards · ${formatDate(deck.createdAt)}</div>
+      </div>
+      <button class="item-delete" aria-label="Delete deck">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+    `;
+    item.addEventListener('click', (e) => {
+      if(e.target.closest('.item-delete')) return;
+      fcState = { cards: deck.cards, topic: deck.topic, index: 0, deckId: deck.id };
+      renderFlashcardViewer();
+    });
+    item.querySelector('.item-delete').addEventListener('click', async () => {
+      try{
+        await fetch(`/api/flashcards/${deck.id}`, { method: 'DELETE' });
+        if(fcState.deckId === deck.id){ fcState = { cards: [], topic: '', index: 0, deckId: null }; renderFlashcardViewer(); }
+        loadDecks();
+      }catch(err){
+        alert('Could not delete deck.');
+      }
+    });
+    deckList.appendChild(item);
+  });
+}
+
+/* ---------------------------------------------------------
+   QUIZ
+--------------------------------------------------------- */
+const quizArea = document.getElementById('quizArea');
+const quizHistoryList = document.getElementById('quizHistoryList');
+let qzState = { questions: [], topic: '', index: 0, correctCount: 0, answered: false, selected: null, saved: false };
+
+document.getElementById('qzGenerateBtn').addEventListener('click', async () => {
+  const { sectionTitle, topic } = readTopicSelection('qzSectionSelect', 'qzCustomTopic');
+  if(!sectionTitle && !topic){
+    quizArea.innerHTML = '<div class="practice-error">Choose a section or type a topic first.</div>';
+    return;
+  }
+  const useReference = document.getElementById('qzUseReference').checked;
+  const count = document.getElementById('qzCount').value;
+  const btn = document.getElementById('qzGenerateBtn');
+  btn.disabled = true;
+  quizArea.innerHTML = '<div class="practice-loading"><div class="thinking"><span></span><span></span><span></span></div>Generating quiz…</div>';
+
+  try{
+    const res = await fetch('/api/quiz/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sectionTitle, topic, useReference, count })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      quizArea.innerHTML = `<div class="practice-error">${escapeHtml(data.error || 'Could not generate quiz.')}</div>`;
+      btn.disabled = false;
+      return;
+    }
+    qzState = { questions: data.questions, topic: data.topic, index: 0, correctCount: 0, answered: false, selected: null, saved: false };
+    renderQuizQuestion();
+  }catch(err){
+    quizArea.innerHTML = `<div class="practice-error">Connection error: ${escapeHtml(err.message)}</div>`;
+  }
+  btn.disabled = false;
+});
+
+function renderQuizQuestion(){
+  if(!qzState.questions.length){
+    quizArea.innerHTML = '<div class="practice-empty">Choose a section (or type a topic), then generate a quiz to begin.</div>';
+    return;
+  }
+  const q = qzState.questions[qzState.index];
+  const optionsHtml = q.options.map((opt, i) => `
+    <button class="quiz-option" data-idx="${i}">${escapeHtml(opt)}</button>
+  `).join('');
+
+  quizArea.innerHTML = `
+    <div class="quiz-progress">${escapeHtml(qzState.topic)} · Question ${qzState.index + 1} of ${qzState.questions.length}</div>
+    <div class="quiz-question">${escapeHtml(q.question)}</div>
+    <div id="quizOptions">${optionsHtml}</div>
+    <div id="quizExplanationWrap"></div>
+  `;
+
+  document.querySelectorAll('#quizOptions .quiz-option').forEach(btn => {
+    btn.addEventListener('click', () => selectQuizAnswer(Number(btn.dataset.idx)));
+  });
+}
+
+function selectQuizAnswer(idx){
+  if(qzState.answered) return;
+  qzState.answered = true;
+  qzState.selected = idx;
+  const q = qzState.questions[qzState.index];
+  const isCorrect = idx === q.answerIndex;
+  if(isCorrect) qzState.correctCount++;
+
+  document.querySelectorAll('#quizOptions .quiz-option').forEach((btn, i) => {
+    btn.disabled = true;
+    if(i === q.answerIndex) btn.classList.add('correct');
+    else if(i === idx) btn.classList.add('incorrect');
+  });
+
+  const isLast = qzState.index === qzState.questions.length - 1;
+  document.getElementById('quizExplanationWrap').innerHTML = `
+    <div class="quiz-explanation">${isCorrect ? '✓ Correct. ' : '✗ Not quite. '}${escapeHtml(q.explanation || '')}</div>
+    <button class="quiz-next-btn" id="quizNextBtn">${isLast ? 'See results' : 'Next question ›'}</button>
+  `;
+  document.getElementById('quizNextBtn').addEventListener('click', () => {
+    if(isLast){ renderQuizResult(); }
+    else { qzState.index++; qzState.answered = false; qzState.selected = null; renderQuizQuestion(); }
+  });
+}
+
+function renderQuizResult(){
+  const total = qzState.questions.length;
+  const score = qzState.correctCount;
+  quizArea.innerHTML = `
+    <div class="quiz-result">
+      <div class="score-big">${score}/${total}</div>
+      <div class="score-label">${escapeHtml(qzState.topic)}</div>
+      <div class="quiz-result-actions">
+        <button class="quiz-save-result-btn" id="quizSaveResultBtn">${qzState.saved ? '✓ Saved' : 'Save result'}</button>
+        <button class="quiz-retry-btn" id="quizRetryBtn">Try another</button>
+      </div>
+    </div>
+  `;
+  const saveBtn = document.getElementById('quizSaveResultBtn');
+  if(qzState.saved){
+    saveBtn.disabled = true;
+  } else {
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      try{
+        await fetch('/api/quiz-history', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic: qzState.topic, score, total })
+        });
+        qzState.saved = true;
+        saveBtn.textContent = '✓ Saved';
+        loadQuizHistory();
+      }catch(err){
+        saveBtn.disabled = false;
+        alert('Could not save result. Is the server running?');
+      }
+    });
+  }
+  document.getElementById('quizRetryBtn').addEventListener('click', () => {
+    qzState = { questions: [], topic: '', index: 0, correctCount: 0, answered: false, selected: null, saved: false };
+    renderQuizQuestion();
+  });
+}
+
+async function loadQuizHistory(){
+  try{
+    const res = await fetch('/api/quiz-history');
+    const data = await res.json();
+    renderQuizHistoryList(data.history || []);
+  }catch(err){
+    quizHistoryList.innerHTML = '';
+  }
+}
+
+function renderQuizHistoryList(history){
+  if(!history.length){
+    quizHistoryList.innerHTML = '<div class="practice-empty">No attempts yet.</div>';
+    return;
+  }
+  quizHistoryList.innerHTML = '';
+  history.forEach(entry => {
+    const pct = entry.total ? entry.score / entry.total : 0;
+    const badgeClass = pct >= 0.8 ? 'good' : pct >= 0.5 ? 'mid' : 'low';
+    const item = document.createElement('div');
+    item.className = 'quiz-history-item';
+    item.innerHTML = `
+      <div class="quiz-history-info">
+        <div class="quiz-history-title">${escapeHtml(entry.topic)}</div>
+        <div class="quiz-history-meta">${formatDate(entry.createdAt)}</div>
+      </div>
+      <span class="quiz-score-badge ${badgeClass}">${entry.score}/${entry.total}</span>
+      <button class="item-delete" aria-label="Delete result">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+      </button>
+    `;
+    item.querySelector('.item-delete').addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try{
+        await fetch(`/api/quiz-history/${entry.id}`, { method: 'DELETE' });
+        loadQuizHistory();
+      }catch(err){
+        alert('Could not delete result.');
+      }
+    });
+    quizHistoryList.appendChild(item);
+  });
+}
 
 /* ---------------------------------------------------------
    CHAT LOGIC
