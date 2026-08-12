@@ -124,7 +124,7 @@ function buildStudyContext(sectionTitle, topic, useReference) {
   const query = (topic || sectionTitle || '').trim();
   if (useReference && referenceReady && referenceChunks.length && query) {
     const matches = reference.searchChunks(query, referenceChunks, 2);
-    if (matches.length) refBlock = reference.buildExcerptBlock(matches, REFERENCE_EXCERPT_MAX_CHARS);
+    if (matches.length) refBlock = reference.buildExcerptBlock(matches, 700);
   }
 
   return { contextText, refBlock };
@@ -206,7 +206,7 @@ app.post('/api/chat', async (req, res) => {
       const matches = reference.searchChunks(lastUserMessage.content, referenceChunks, 3);
       if (matches.length) {
         referencePagesUsed = matches.map(m => m.page);
-        const excerpt = reference.buildExcerptBlock(matches, REFERENCE_EXCERPT_MAX_CHARS);
+        const excerpt = reference.buildExcerptBlock(matches, 900);
         systemContent += `\n\nADDITIONAL PERSONAL REFERENCE MATERIAL (from a practice-test book the student personally owns — separate from the handbook above). These are short, capped excerpts included only for extra context on this specific question:\n\n${excerpt}\n\nWhen drawing on this material: paraphrase it in your own words rather than quoting it at length, refer to it generically as "your reference material" (not by title or publisher), and never reproduce more of it than what's shown above.`;
       }
     }
