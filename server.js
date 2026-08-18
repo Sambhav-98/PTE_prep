@@ -3,10 +3,12 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const multer = require('multer');
 const { SOURCES } = require('./knowledge');
 const { ROADMAP } = require('./roadmap');
 const storage = require('./storage');
 const reference = require('./reference');
+const library = require('./library');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +16,15 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 const REFERENCE_PDF_PATH = process.env.REFERENCE_PDF_PATH;
 const REFERENCE_PDF_DRIVE_URL = process.env.REFERENCE_PDF_DRIVE_URL;
+
+// Library uploads are held in memory just long enough to parse + save to
+// disk (library.addBook does the writing) — never written anywhere by
+// multer itself. 50MB covers a large scanned-text ebook comfortably.
+const libraryUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => cb(null, file.mimetype === 'application/pdf')
+});
 
 // Holds the parsed reference index in memory once loaded. Stays empty if
 // nothing is configured, or if loading fails — the app works fine either
@@ -81,18 +92,37 @@ async function initReference() {
   }
 }
 
-function buildSystemPrompt() {
+/**
+ * Builds the chat system prompt. The uploaded Library (see library.js) is
+ * the primary knowledge source whenever it has anything relevant to the
+ * current question — libraryExcerpt is a handful of matched, capped chunks,
+ * never the whole library, which is what keeps this cheap regardless of how
+ * many ebooks get uploaded. The built-in handbook (knowledge.js) is always
+ * included too, but framed as a fallback/supplement so the model reaches
+ * for it only when the library doesn't cover something.
+ */
+function buildSystemPrompt(libraryExcerpt) {
   const kb = SOURCES.map(s => `## ${s.title}\n${s.content.trim()}`).join('\n\n');
-  return `You are the study assistant embedded in "PTE Prep Hub," built on a single source document: the PTE Academic Handbook by Ultimate Language Academy. Answer the user's questions using ONLY the handbook content provided below.
+  const hasLibrary = Boolean(libraryExcerpt);
+
+  const librarySection = hasLibrary
+    ? `LIBRARY MATERIAL (primary source — excerpts from your institution's own uploaded ebooks, matched to the student's question):\n${libraryExcerpt}\n\n`
+    : '';
+  const handbookLabel = hasLibrary
+    ? 'SUPPLEMENTARY HANDBOOK CONTENT (fall back to this only for anything the Library material above doesn\'t cover):'
+    : 'HANDBOOK CONTENT:';
+
+  return `You are the study assistant embedded in "PTE Prep Hub." Answer the user's questions using ONLY the material provided below${hasLibrary ? ', prioritizing the Library material as the primary source' : ''}.
 
 Rules:
-- Ground every answer in the handbook content below. Do not invent facts, numbers, or templates that aren't in it.
-- If the answer isn't covered in the handbook, say so plainly and suggest the closest related section instead of guessing.
+- Ground every answer in the material below. Do not invent facts, numbers, or templates that aren't in it.
+- If the answer isn't covered below, say so plainly and suggest the closest related topic instead of guessing.
 - Be concise, practical, and exam-focused — this is for a student actively preparing for the PTE Academic test.
 - When helpful, format with short paragraphs or bullet points (use "- " for bullets, "**text**" for bold). Don't use headers.
-- When you draw from a specific section, you can mention its name naturally (e.g. "As covered in Read Aloud...").
+- When you draw from a specific handbook section, you can mention its name naturally (e.g. "As covered in Read Aloud...").
+- When you draw from Library material, paraphrase it in your own words rather than quoting it at length.
 
-HANDBOOK CONTENT:
+${librarySection}${handbookLabel}
 ${kb}`;
 }
 
@@ -111,8 +141,19 @@ app.get('/api/health', (req, res) => {
  * reference content.
  */
 function buildStudyContext(sectionTitle, topic, useReference) {
+  const label = (topic && topic.trim()) || sectionTitle || '';
   let contextText = '';
-  if (sectionTitle) {
+
+  // Library first: search the uploaded ebooks for chunks matching the
+  // chosen topic/section, capped just like chat — not the whole library.
+  if (!library.isEmpty() && label) {
+    const libMatches = library.search(label, 4);
+    if (libMatches.length) contextText = library.buildExcerptBlock(libMatches, 3500);
+  }
+
+  // Handbook fallback — used whenever the library is empty or has nothing
+  // relevant to this particular topic.
+  if (!contextText && sectionTitle) {
     const section = SOURCES.find(s => s.title === sectionTitle);
     if (section) contextText = `## ${section.title}\n${section.content.trim()}`;
   }
@@ -181,6 +222,40 @@ app.get('/api/reference-status', (req, res) => {
   res.json({ available: referenceReady, pages: referencePageCount, source: referenceSource });
 });
 
+// ---- Library (uploaded ebooks — the primary knowledge source) ----------
+
+app.get('/api/library', (req, res) => {
+  res.json({ books: library.listBooks() });
+});
+
+app.post('/api/library/upload', (req, res) => {
+  libraryUpload.single('file')(req, res, async (err) => {
+    if (err) {
+      const message = err.code === 'LIMIT_FILE_SIZE' ? 'File is too large (50MB max).' : err.message;
+      return res.status(400).json({ error: message });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No PDF file was received. Only application/pdf is accepted.' });
+    }
+    try {
+      const book = await library.addBook(req.file.buffer, req.file.originalname);
+      res.json({ book });
+    } catch (e) {
+      res.status(400).json({ error: `Could not read this PDF: ${e.message}` });
+    }
+  });
+});
+
+app.delete('/api/library/:id', async (req, res) => {
+  try {
+    const removed = await library.removeBook(req.params.id);
+    if (!removed) return res.status(404).json({ error: 'Ebook not found.' });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: `Could not remove ebook: ${err.message}` });
+  }
+});
+
 app.post('/api/chat', async (req, res) => {
   if (!OPENAI_API_KEY) {
     return res.status(500).json({
@@ -193,7 +268,23 @@ app.post('/api/chat', async (req, res) => {
     return res.status(400).json({ error: 'Request body must include a "messages" array.' });
   }
 
-  let systemContent = buildSystemPrompt();
+  const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+
+  // Library first: search across every uploaded ebook for chunks relevant
+  // to the student's latest message. Only the matched, capped excerpts are
+  // sent — never the full library — so cost/latency stay flat as more
+  // ebooks get uploaded.
+  let libraryExcerpt = '';
+  let libraryItemsUsed = [];
+  if (!library.isEmpty() && lastUserMessage && lastUserMessage.content) {
+    const libMatches = library.search(lastUserMessage.content, 5);
+    if (libMatches.length) {
+      libraryExcerpt = library.buildExcerptBlock(libMatches, 4000);
+      libraryItemsUsed = libMatches.map(m => ({ book: m.bookTitle, page: m.page }));
+    }
+  }
+
+  let systemContent = buildSystemPrompt(libraryExcerpt);
   let referencePagesUsed = [];
 
   // If a personal reference PDF is loaded, pull a couple of short, capped
@@ -201,7 +292,6 @@ app.post('/api/chat', async (req, res) => {
   // document. This keeps the reference material as light supporting
   // context rather than something that gets bulk-reproduced.
   if (referenceReady && referenceChunks.length) {
-    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
     if (lastUserMessage && lastUserMessage.content) {
       const matches = reference.searchChunks(lastUserMessage.content, referenceChunks, 3);
       if (matches.length) {
@@ -236,7 +326,8 @@ app.post('/api/chat', async (req, res) => {
     const reply = data.choices?.[0]?.message?.content || "I couldn't generate a response — please try again.";
     res.json({
       reply,
-      reference: referencePagesUsed.length ? { pages: referencePagesUsed } : null
+      reference: referencePagesUsed.length ? { pages: referencePagesUsed } : null,
+      library: libraryItemsUsed.length ? { items: libraryItemsUsed } : null
     });
   } catch (err) {
     res.status(500).json({ error: `Server error contacting OpenAI: ${err.message}` });
@@ -531,4 +622,5 @@ app.listen(PORT, () => {
   console.log(`PTE Prep Hub running at http://localhost:${PORT}`);
   console.log(OPENAI_API_KEY ? `OpenAI key loaded. Using model: ${MODEL}` : 'WARNING: No OPENAI_API_KEY found in .env');
   initReference();
+  library.init();
 });
